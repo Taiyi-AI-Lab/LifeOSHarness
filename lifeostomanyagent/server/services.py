@@ -16,6 +16,9 @@ from lifeostomanyagent.domain.models import (
     BehaviorTrajectory,
     ContextRequest,
     ContextResponse,
+    DreamLatestResponse,
+    DreamRunRequest,
+    DreamRunResponse,
     PackCreateRequest,
     PackResponse,
     RuntimeModules,
@@ -124,12 +127,13 @@ class LifeOSService:
         return [self._world_response(row) for row in rows]
 
     def build_context(self, payload: ContextRequest) -> ContextResponse:
+        engine = self._engine_for_world(payload.world_id)
+        use_cache = not bool(engine.dreams)
         cache_key = self._cache_key(payload)
-        cached = self._cache_get(cache_key)
+        cached = self._cache_get(cache_key) if use_cache else None
         if cached:
             return ContextResponse.model_validate(cached)
 
-        engine = self._engine_for_world(payload.world_id)
         result = engine.build_context(
             payload.user_message,
             connector_id=payload.connector_id,
@@ -145,14 +149,15 @@ class LifeOSService:
                 for block in result["blocks"]
             ],
         )
-        self._cache_set(cache_key, response.model_dump())
+        if use_cache:
+            self._cache_set(cache_key, response.model_dump())
         return response
 
     def session_start(self, payload: SessionEventRequest) -> dict:
         from datetime import datetime, timezone
 
         engine = self._engine_for_world(payload.world_id)
-        state = engine.on_chat_started()
+        state = engine.on_chat_started(connector_id=payload.connector_id, session_id=payload.session_id)
         row = SessionRecordRow(
             world_id=payload.world_id,
             connector_id=payload.connector_id,
@@ -168,7 +173,11 @@ class LifeOSService:
         from datetime import datetime, timezone
 
         engine = self._engine_for_world(payload.world_id)
-        state = engine.on_chat_ended(meaningful=payload.meaningful)
+        state = engine.on_chat_ended(
+            connector_id=payload.connector_id,
+            session_id=payload.session_id,
+            meaningful=payload.meaningful,
+        )
         record = (
             self.db.query(SessionRecordRow)
             .filter(
@@ -186,15 +195,35 @@ class LifeOSService:
 
     def turn_begin(self, payload: SessionEventRequest) -> dict:
         engine = self._engine_for_world(payload.world_id)
-        state = engine.on_chat_started()
+        state = engine.on_chat_started(connector_id=payload.connector_id, session_id=payload.session_id)
         self._invalidate_world_cache(payload.world_id)
         return {"ok": True, "emotion": state}
 
     def turn_finish(self, payload: SessionEventRequest) -> dict:
         engine = self._engine_for_world(payload.world_id)
-        state = engine.on_chat_ended(meaningful=payload.meaningful)
+        state = engine.on_chat_ended(
+            connector_id=payload.connector_id,
+            session_id=payload.session_id,
+            meaningful=payload.meaningful,
+        )
         self._invalidate_world_cache(payload.world_id)
         return {"ok": True, "emotion": state}
+
+    def dream_run(self, payload: DreamRunRequest) -> DreamRunResponse:
+        engine = self._engine_for_world(payload.world_id)
+        result = engine.ensure_due_dream(dream_date=payload.dream_date, force=payload.force)
+        if result is None:
+            latest = engine.latest_dream()
+            if latest is None:
+                result = {"created": False, "dream": {}}
+            else:
+                result = {"created": False, "dream": latest}
+        self._invalidate_world_cache(payload.world_id)
+        return DreamRunResponse(world_id=payload.world_id, created=bool(result["created"]), dream=result["dream"])
+
+    def dream_latest(self, world_id: str) -> DreamLatestResponse:
+        engine = self._engine_for_world(world_id)
+        return DreamLatestResponse(world_id=world_id, dream=engine.latest_dream())
 
     def _engine_for_world(self, world_id: str) -> WorldRuntimeEngine:
         row = self._get_world_row(world_id)

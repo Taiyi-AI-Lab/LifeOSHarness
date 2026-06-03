@@ -44,6 +44,7 @@ class PromptComposer:
         persona_system: Any | None = None,
         emotion_system: Any | None = None,
         world_engine: Any | None = None,
+        dream_engine: Any | None = None,
     ):
         self.pack = pack
         self.overrides = overrides or WorldOverrides()
@@ -51,6 +52,7 @@ class PromptComposer:
         self.persona_system = persona_system
         self.emotion_system = emotion_system
         self.world_engine = world_engine
+        self.dream_engine = dream_engine
 
     def compose(
         self,
@@ -120,6 +122,11 @@ class PromptComposer:
             content = self.emotion_system.build_emotion_prompt_block()
             if content:
                 blocks.append({"id": "emotion_state", "tag": "<alice_emotion>", "content": content})
+
+        if self.dream_engine:
+            content = self.dream_engine.build_prompt_block()
+            if content:
+                blocks.append({"id": "dream_context", "tag": "<dream_context>", "content": content})
 
         if self.memory_system:
             content = self.memory_system.get_system_prompt_block()

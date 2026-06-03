@@ -17,8 +17,8 @@ services:
 
   api:
     build:
-      context: ..
-      dockerfile: lifeostomanyagent/Dockerfile
+      context: .
+      dockerfile: Dockerfile
     environment:
       DATABASE_URL: postgresql+psycopg://lifeos:lifeos@postgres:5432/lifeos
       REDIS_URL: redis://redis:6379/0
@@ -31,7 +31,6 @@ services:
       - redis
     volumes:
       - lifeos_data:/data
-      - ../003-life-os:/app/003-life-os:ro
 
 volumes:
   lifeos_pg:

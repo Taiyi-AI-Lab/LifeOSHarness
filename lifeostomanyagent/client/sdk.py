@@ -131,3 +131,26 @@ class LifeOSClient:
         )
         response.raise_for_status()
         return response.json()
+
+    def dream_run(
+        self,
+        *,
+        world_id: str,
+        dream_date: str | None = None,
+        force: bool = False,
+    ) -> dict:
+        response = self._client.post(
+            "/runtime/dreams/run",
+            json={
+                "world_id": world_id,
+                "dream_date": dream_date,
+                "force": force,
+            },
+        )
+        response.raise_for_status()
+        return response.json()
+
+    def dream_latest(self, *, world_id: str) -> dict:
+        response = self._client.get("/runtime/dreams/latest", params={"world_id": world_id})
+        response.raise_for_status()
+        return response.json()

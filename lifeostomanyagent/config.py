@@ -5,10 +5,6 @@ from pathlib import Path
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
-def repo_root() -> Path:
-    return Path(__file__).resolve().parents[2]
-
-
 class Settings(BaseSettings):
     model_config = SettingsConfigDict(
         env_file=(".env", "../.env"),
@@ -23,7 +19,9 @@ class Settings(BaseSettings):
     lifeos_host: str = "0.0.0.0"
     lifeos_port: int = 8000
     context_cache_ttl_seconds: int = 30
-    bws_fuxian_root: Path = repo_root() / "003-life-os"
+    deepseek_api_key: str | None = None
+    deepseek_dream_model: str = "deepseek-v4-pro"
+    deepseek_dream_base_url: str = "https://api.deepseek.com"
 
     @property
     def worlds_data_root(self) -> Path:

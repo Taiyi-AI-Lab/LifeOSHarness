@@ -38,6 +38,7 @@ PROTECTED_BLOCK_IDS: frozenset[str] = frozenset(
     {
         "persona_state",
         "emotion_state",
+        "dream_context",
         "user_memory",
         "world_facts",
         "user_message",

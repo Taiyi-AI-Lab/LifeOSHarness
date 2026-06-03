@@ -247,6 +247,6 @@ Claude Code 与 Codex 使用**同一份** `~/.lifeos/hooks/lifeos_hook.py`，区
 
 ## 六、与 API 文档的关系
 
-- 平台 API 总览：[`docs/api/lifeos-platform.md`](../../docs/api/lifeos-platform.md)
+- 平台 API 总览：[`docs/api/lifeos-platform.md`](api/lifeos-platform.md)
 - Hermes 安装/卸载：[`docs/hermes-connector.md`](hermes-connector.md)
 - Codex：[`docs/codex-connector.md`](codex-connector.md)

@@ -37,7 +37,7 @@ agent_packs (pack_id)
 
 ## `agent_packs`
 
-Agent 世界「模板」。Alice 官方预设 `pack_id = 'alice'`，`is_preset = true`。
+Agent 世界「模板」。Alice 示例预设 `pack_id = 'alice'`，`is_preset = true`。
 
 | 列名 | 类型 | 约束 | 说明 |
 |------|------|------|------|
@@ -45,7 +45,7 @@ Agent 世界「模板」。Alice 官方预设 `pack_id = 'alice'`，`is_preset =
 | `pack_id` | `VARCHAR(128)` | UNIQUE, INDEX | 业务 ID，如 `alice`、`nova` |
 | `display_name` | `VARCHAR(256)` | NOT NULL | 展示名 |
 | `config_json` | `JSON` | NOT NULL | 完整 Pack 配置，结构见下 |
-| `is_preset` | `BOOLEAN` | DEFAULT false | 是否为官方预设 |
+| `is_preset` | `BOOLEAN` | DEFAULT false | 是否为内置示例预设 |
 | `created_at` | `TIMESTAMPTZ` | DEFAULT now() | 创建时间 |
 
 ### `config_json` 结构（`AgentPackConfig`）
@@ -139,8 +139,9 @@ Agent 世界「模板」。Alice 官方预设 `pack_id = 'alice'`，`is_preset =
 | `emotion.json` | 情绪状态 | `runtime_modules.emotion` |
 | `memory/` | 用户记忆目录 | `runtime_modules.memory` |
 | `world.sqlite3` | 世界物品 / 事实 | `runtime_modules.world_facts` |
+| `dreams.json` | 每日梦境种子与昨夜梦境 | `runtime_modules.dreams` |
 
-这些文件 **不在 Postgres**，由 `WorldRuntimeEngine` 读写（复用 `003-life-os/bws_fuxian` 子系统）。
+这些文件 **不在 Postgres**，由 `WorldRuntimeEngine` 读写（使用仓库内嵌的 `lifeostomanyagent/server/runtime_state` 子系统）。
 
 ---
 
@@ -203,7 +204,7 @@ LIMIT 10;
 
 | 操作 | 接口 |
 |------|------|
-| 安装/刷新 Alice 预设 | `POST /packs/presets/alice` |
+| 安装/刷新 Alice 示例预设 | `POST /packs/presets/alice` |
 | 创建 Pack | `POST /packs` |
 | 列出 Pack | `GET /packs` |
 | 创建 World | `POST /worlds` |
@@ -211,4 +212,4 @@ LIMIT 10;
 | 拉 context | `POST /runtime/context` |
 | 会话事件 | `POST /runtime/session/start` · `end` |
 
-详见 [`docs/api/lifeos-platform.md`](../../docs/api/lifeos-platform.md)。
+详见 [`docs/api/lifeos-platform.md`](api/lifeos-platform.md)。

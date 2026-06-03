@@ -2,7 +2,7 @@
 
 本文说明如何在 [pi coding agent](https://github.com/badlogic/pi-mono)（`pi` CLI）中接入 LifeOS（Alice 世界状态、人设、情绪、记忆），以及如何验证、停用与卸载。
 
-> **说明**：本文档针对 **pi CLI + Extension** 联动。Alice Electron 桌面端通过子进程接入 pi 的方案见 [`docs/api/pi-agent-adapter.md`](../../docs/api/pi-agent-adapter.md)，与 LifeOS Extension 可并存，但集成路径不同。
+> **说明**：本文档针对 **pi CLI + Extension** 联动。Alice Electron 桌面端通过子进程接入 pi 的方案见 [`docs/api/pi-agent-adapter.md`](api/pi-agent-adapter.md)，与 LifeOS Extension 可并存，但集成路径不同。
 
 ## 前置条件
 
@@ -267,7 +267,7 @@ uv run lifeos connector install pi
 
 ## 七、与 API 文档的关系
 
-- 平台 API 总览：[`docs/api/lifeos-platform.md`](../../docs/api/lifeos-platform.md)
+- 平台 API 总览：[`docs/api/lifeos-platform.md`](api/lifeos-platform.md)
 - Claude Code：[`docs/claude-code-connector.md`](claude-code-connector.md)
 - Hermes：[`docs/hermes-connector.md`](hermes-connector.md)
-- Alice × pi 子进程协议（Electron）：[`docs/api/pi-agent-adapter.md`](../../docs/api/pi-agent-adapter.md)
+- Alice × pi 子进程协议（Electron）：[`docs/api/pi-agent-adapter.md`](api/pi-agent-adapter.md)

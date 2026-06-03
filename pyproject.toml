@@ -4,6 +4,7 @@ version = "0.1.0"
 description = "LifeOS platform: customizable agent worlds with multi-runtime connectors"
 readme = "README.md"
 requires-python = ">=3.11"
+license = "MIT"
 dependencies = [
     "fastapi>=0.115.0",
     "uvicorn[standard]>=0.32.0",
@@ -35,11 +36,11 @@ build-backend = "hatchling.build"
 packages = ["lifeostomanyagent"]
 
 [tool.pytest.ini_options]
-pythonpath = ["../003-life-os", "."]
+pythonpath = ["."]
 testpaths = ["tests"]
 
-[tool.uv]
-dev-dependencies = [
+[dependency-groups]
+dev = [
     "pytest>=8.3.0",
     "pytest-asyncio>=0.24.0",
 ]

@@ -42,6 +42,7 @@ class RuntimeModules(BaseModel):
     memory: bool = True
     world_facts: bool = True
     proactive: bool = True
+    dreams: bool = False
 
 
 class AgentPackConfig(BaseModel):
@@ -95,6 +96,23 @@ class SessionEventRequest(BaseModel):
     connector_id: str
     session_id: str
     meaningful: bool = True
+
+
+class DreamRunRequest(BaseModel):
+    world_id: str
+    dream_date: str | None = None
+    force: bool = False
+
+
+class DreamRunResponse(BaseModel):
+    world_id: str
+    created: bool
+    dream: dict[str, Any]
+
+
+class DreamLatestResponse(BaseModel):
+    world_id: str
+    dream: dict[str, Any] | None = None
 
 
 class PackCreateRequest(BaseModel):

@@ -269,7 +269,7 @@ uv run lifeos connector install codex
 
 ## 六、相关文档
 
-- 平台 API：[`docs/api/lifeos-platform.md`](../../docs/api/lifeos-platform.md)
+- 平台 API：[`docs/api/lifeos-platform.md`](api/lifeos-platform.md)
 - Claude Code（同脚本、不同配置）：[`docs/claude-code-connector.md`](claude-code-connector.md)
 - pi：[`docs/pi-connector.md`](pi-connector.md)
 - Hermes：[`docs/hermes-connector.md`](hermes-connector.md)

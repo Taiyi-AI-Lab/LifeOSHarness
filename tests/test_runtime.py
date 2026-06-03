@@ -1,12 +1,22 @@
 from __future__ import annotations
 
+import inspect
 from pathlib import Path
 
 import pytest
 
-from lifeostomanyagent.domain.models import AgentIdentity, AgentPackConfig, WorldOverrides
+from lifeostomanyagent.domain.models import AgentIdentity, AgentPackConfig, RuntimeModules, WorldOverrides
 from lifeostomanyagent.server.engine.prompt_composer import PromptComposer
+from lifeostomanyagent.server.engine import runtime as runtime_module
 from lifeostomanyagent.server.presets.alice import build_alice_pack_config
+
+
+def test_runtime_uses_embedded_state_modules():
+    source = inspect.getsource(runtime_module)
+    legacy_module = "bws" + "_fuxian"
+    assert legacy_module not in source
+    assert f"ensure_{legacy_module}_path" not in source
+    assert "lifeostomanyagent.server.runtime_state" in source
 
 
 def test_alice_structured_pack_has_identity():
@@ -30,6 +40,7 @@ def test_world_runtime_engine_builds_blocks(tmp_path: Path):
     assert "<alice_persona>" in result["system"]
     assert "<alice_emotion>" in result["system"]
     assert "<user_message>" in result["system"]
+    assert "# World Facts" in result["system"]
     assert "你好" in result["system"]
     assert "platform_guardrails" in result["order"]
     assert "agent_identity" in result["order"]
@@ -114,3 +125,49 @@ def test_prompt_composer_protects_runtime_blocks(tmp_path: Path):
         assert "test" in result["system"]
     finally:
         connector_profiles.CONNECTOR_PROFILES["hermes"] = original
+
+
+def test_dream_runtime_injects_latest_dream_after_emotion(tmp_path: Path):
+    from datetime import datetime
+    from zoneinfo import ZoneInfo
+
+    from lifeostomanyagent.server.engine.runtime import WorldRuntimeEngine
+
+    def ms(year: int, month: int, day: int, hour: int) -> int:
+        dt = datetime(year, month, day, hour, tzinfo=ZoneInfo("Asia/Shanghai"))
+        return int(dt.timestamp() * 1000)
+
+    pack = AgentPackConfig.model_validate(build_alice_pack_config())
+    pack.runtime_modules.dreams = True
+    engine = WorldRuntimeEngine(tmp_path / "runtime_dream", pack, WorldOverrides())
+    engine.record_interaction_seed(
+        "hermes",
+        "昨天聊到木生、阿嬷和一封没有寄出的信。",
+        now=ms(2026, 6, 2, 22),
+    )
+
+    result = engine.build_context("早", connector_id="hermes", now=ms(2026, 6, 3, 3))
+
+    assert "dream_context" in result["order"]
+    assert result["order"].index("emotion_state") < result["order"].index("dream_context")
+    assert result["order"].index("dream_context") < result["order"].index("user_message")
+    assert "<dream_context>" in result["system"]
+    assert "木生、阿嬷" in result["system"]
+
+
+def test_dream_runtime_disabled_by_default(tmp_path: Path):
+    from datetime import datetime
+    from zoneinfo import ZoneInfo
+
+    from lifeostomanyagent.server.engine.runtime import WorldRuntimeEngine
+
+    dt = datetime(2026, 6, 3, 3, tzinfo=ZoneInfo("Asia/Shanghai"))
+    now = int(dt.timestamp() * 1000)
+    pack = AgentPackConfig.model_validate(build_alice_pack_config())
+    pack.runtime_modules = RuntimeModules(dreams=False)
+    engine = WorldRuntimeEngine(tmp_path / "runtime_no_dream", pack, WorldOverrides())
+
+    result = engine.build_context("早", connector_id="hermes", now=now)
+
+    assert "dream_context" not in result["order"]
+    assert "<dream_context>" not in result["system"]

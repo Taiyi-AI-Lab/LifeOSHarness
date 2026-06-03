@@ -2,7 +2,14 @@ from __future__ import annotations
 
 from fastapi import APIRouter, Depends, HTTPException
 
-from lifeostomanyagent.domain.models import ContextRequest, ContextResponse, SessionEventRequest
+from lifeostomanyagent.domain.models import (
+    ContextRequest,
+    ContextResponse,
+    DreamLatestResponse,
+    DreamRunRequest,
+    DreamRunResponse,
+    SessionEventRequest,
+)
 from lifeostomanyagent.server.auth import require_api_key
 from lifeostomanyagent.server.deps import get_service
 from lifeostomanyagent.server.services import LifeOSService
@@ -66,5 +73,29 @@ def turn_finish(
 ) -> dict:
     try:
         return service.turn_finish(payload)
+    except KeyError as error:
+        raise HTTPException(status_code=404, detail=str(error)) from error
+
+
+@router.post("/dreams/run", response_model=DreamRunResponse)
+def dream_run(
+    payload: DreamRunRequest,
+    _: str = Depends(require_api_key),
+    service: LifeOSService = Depends(get_service),
+) -> DreamRunResponse:
+    try:
+        return service.dream_run(payload)
+    except KeyError as error:
+        raise HTTPException(status_code=404, detail=str(error)) from error
+
+
+@router.get("/dreams/latest", response_model=DreamLatestResponse)
+def dream_latest(
+    world_id: str,
+    _: str = Depends(require_api_key),
+    service: LifeOSService = Depends(get_service),
+) -> DreamLatestResponse:
+    try:
+        return service.dream_latest(world_id)
     except KeyError as error:
         raise HTTPException(status_code=404, detail=str(error)) from error

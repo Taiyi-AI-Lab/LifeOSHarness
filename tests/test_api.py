@@ -1,5 +1,8 @@
 from __future__ import annotations
 
+from datetime import datetime
+from zoneinfo import ZoneInfo
+
 API_HEADERS = {"X-API-Key": "dev-lifeos-key-change-me"}
 
 
@@ -151,3 +154,72 @@ def test_pi_vs_hermes_context_size(client):
     assert "connector_overlay" in pi["order"]
     assert "PptxGenJS" not in hermes["system"]
     assert "todo_write" in pi["system"] or "PptxGenJS" in pi["system"]
+
+
+def test_dream_run_and_context_injection(client):
+    today = datetime.now(ZoneInfo("Asia/Shanghai")).date().isoformat()
+    created = client.post(
+        "/packs",
+        headers=API_HEADERS,
+        json={
+            "pack_id": "musheng-test",
+            "display_name": "木生测试",
+            "identity": {
+                "agent_name": "木生",
+                "codename": "musheng",
+                "backstory": "现代生活中的木生。",
+                "relationship_stance": "陪伴但有边界。",
+                "core_values": ["诚实", "温柔", "记得重要的事"],
+            },
+            "runtime_modules": {
+                "persona": True,
+                "emotion": True,
+                "memory": True,
+                "world_facts": True,
+                "proactive": True,
+                "dreams": True,
+            },
+        },
+    )
+    assert created.status_code == 200
+    world_id = client.post(
+        "/worlds",
+        headers=API_HEADERS,
+        json={"pack_id": "musheng-test", "display_name": "木生测试世界"},
+    ).json()["world_id"]
+
+    first_context = client.post(
+        "/runtime/context",
+        headers=API_HEADERS,
+        json={
+            "world_id": world_id,
+            "user_message": "昨天我们聊了阿嬷的信，还有木生怎么在现代生活。",
+            "connector_id": "hermes",
+        },
+    )
+    assert first_context.status_code == 200
+
+    dream = client.post(
+        "/runtime/dreams/run",
+        headers=API_HEADERS,
+        json={"world_id": world_id, "dream_date": today, "force": True},
+    )
+    assert dream.status_code == 200
+    assert dream.json()["created"] is True
+    assert dream.json()["dream"]["dream_date"] == today
+
+    second_context = client.post(
+        "/runtime/context",
+        headers=API_HEADERS,
+        json={
+            "world_id": world_id,
+            "user_message": "早，昨晚梦见什么了吗？",
+            "connector_id": "hermes",
+        },
+    ).json()
+    assert "dream_context" in second_context["order"]
+    assert "阿嬷的信" in second_context["system"]
+
+    latest = client.get(f"/runtime/dreams/latest?world_id={world_id}", headers=API_HEADERS)
+    assert latest.status_code == 200
+    assert latest.json()["dream"]["dream_date"] == today

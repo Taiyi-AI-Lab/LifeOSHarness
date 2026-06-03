@@ -256,7 +256,7 @@ uv run lifeos connector install openclaw
 
 ## 七、相关文档
 
-- 平台 API：[`docs/api/lifeos-platform.md`](../../docs/api/lifeos-platform.md)
+- 平台 API：[`docs/api/lifeos-platform.md`](api/lifeos-platform.md)
 - pi：[`docs/pi-connector.md`](pi-connector.md)
 - Claude Code：[`docs/claude-code-connector.md`](claude-code-connector.md)
 - Hermes：[`docs/hermes-connector.md`](hermes-connector.md)

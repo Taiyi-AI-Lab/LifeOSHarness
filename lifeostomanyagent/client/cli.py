@@ -56,6 +56,20 @@ def _select_world(
     return matches[0]
 
 
+def _resolve_world_for_command(
+    client: LifeOSClient,
+    config: ClientConfig,
+    *,
+    world_id: str | None,
+    pack_id: str | None,
+    display_name: str | None,
+) -> str:
+    if pack_id or display_name:
+        worlds = client.list_worlds()
+        return _select_world(worlds, world_id=world_id, pack_id=pack_id, display_name=display_name).world_id
+    return world_id or _world_id(None)
+
+
 @app.command("login")
 def login(
     server: str = typer.Option("http://127.0.0.1:8000", "--server"),
@@ -194,6 +208,34 @@ def session_end(
             meaningful=meaningful,
         )
     console.print(json.dumps(result, ensure_ascii=False))
+
+
+@app.command("dream-run")
+def dream_run(
+    world: str | None = typer.Option(None, "--world", "--world-id", help="Exact world_id to generate dreams for"),
+    pack_id: str | None = typer.Option(None, "--pack", help="Select the only world for this pack_id"),
+    name: str | None = typer.Option(None, "--name", help="Select by world display_name"),
+    dream_date: str | None = typer.Option(None, "--date", help="Generate this local date, e.g. 2026-06-02"),
+    force: bool = typer.Option(False, "--force", help="Regenerate even if the dream already exists"),
+) -> None:
+    config = ConfigStore().load()
+    with LifeOSClient(config) as client:
+        world_id = _resolve_world_for_command(client, config, world_id=world, pack_id=pack_id, display_name=name)
+        result = client.dream_run(world_id=world_id, dream_date=dream_date, force=force)
+    console.print(json.dumps(result, ensure_ascii=False, indent=2))
+
+
+@app.command("dream-show")
+def dream_show(
+    world: str | None = typer.Option(None, "--world", "--world-id", help="Exact world_id to inspect"),
+    pack_id: str | None = typer.Option(None, "--pack", help="Select the only world for this pack_id"),
+    name: str | None = typer.Option(None, "--name", help="Select by world display_name"),
+) -> None:
+    config = ConfigStore().load()
+    with LifeOSClient(config) as client:
+        world_id = _resolve_world_for_command(client, config, world_id=world, pack_id=pack_id, display_name=name)
+        result = client.dream_latest(world_id=world_id)
+    console.print(json.dumps(result, ensure_ascii=False, indent=2))
 
 
 @connector_app.command("install")

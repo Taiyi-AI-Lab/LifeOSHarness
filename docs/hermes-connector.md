@@ -234,5 +234,5 @@ uv run lifeos connector install hermes
 
 ## 五、与 API 文档的关系
 
-- 平台 API 与 Hook 映射总览：[`docs/api/lifeos-platform.md`](../../docs/api/lifeos-platform.md)
+- 平台 API 与 Hook 映射总览：[`docs/api/lifeos-platform.md`](api/lifeos-platform.md)
 - 本文专注 Hermes 的安装、启用、验证与卸载操作步骤

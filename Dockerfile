@@ -4,14 +4,12 @@ WORKDIR /app
 
 RUN pip install --no-cache-dir uv
 
-COPY lifeostomanyagent/pyproject.toml lifeostomanyagent/README.md /app/lifeostomanyagent/
-COPY lifeostomanyagent/lifeostomanyagent /app/lifeostomanyagent/lifeostomanyagent
-COPY 003-life-os /app/003-life-os
+COPY pyproject.toml README.md /app/lifeostomanyagent/
+COPY lifeostomanyagent /app/lifeostomanyagent/lifeostomanyagent
 
 WORKDIR /app/lifeostomanyagent
 RUN uv pip install --system .
 
-ENV BWS_FUXIAN_ROOT=/app/003-life-os
 ENV LIFEOS_DATA_ROOT=/data
 
 EXPOSE 8000

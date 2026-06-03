@@ -57,3 +57,25 @@ def test_select_world_rejects_ambiguous_pack():
 def test_select_world_requires_filter():
     with pytest.raises(typer.BadParameter, match="pass --world-id"):
         _select_world([], world_id=None, pack_id=None, display_name=None)
+
+
+def test_select_world_for_dream_commands_by_pack():
+    worlds = [
+        _world("alice-world", "alice", "我的 Alice"),
+        _world("musheng-world", "musheng", "木生"),
+    ]
+
+    selected = _select_world(worlds, world_id=None, pack_id="musheng", display_name=None)
+
+    assert selected.world_id == "musheng-world"
+
+
+def test_select_world_for_dream_commands_by_world_id():
+    worlds = [
+        _world("alice-world", "alice", "我的 Alice"),
+        _world("musheng-world", "musheng", "木生"),
+    ]
+
+    selected = _select_world(worlds, world_id="alice-world", pack_id=None, display_name=None)
+
+    assert selected.pack_id == "alice"

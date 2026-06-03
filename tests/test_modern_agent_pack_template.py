@@ -23,6 +23,8 @@ def test_modern_agent_pack_template_documents_required_rules():
     assert "一轮回复最多两句" in content
     assert "蛐蛐里提到用户时也要遵循称呼与性别感知规则" in content
     assert "未知性别时用名字或「对方」" in content
+    assert "昨夜梦境" in content
+    assert "梦境是象征、情绪整理和记忆残片" in content
 
 
 def test_modern_agent_pack_template_json_matches_agent_pack_shape():
@@ -79,7 +81,15 @@ def test_modern_agent_pack_template_json_matches_agent_pack_shape():
         "memory",
         "world_facts",
         "proactive",
+        "dreams",
     }
+
+
+def test_musheng_pack_enables_dream_runtime_module():
+    content = (ROOT / "docs" / "agent-packs" / "musheng.md").read_text("utf-8")
+
+    assert "昨夜梦境" in content
+    assert '"dreams": true' in content
 
 
 def test_musheng_pack_documents_inner_monologue_rules():
