@@ -1,0 +1,8 @@
+name: lifeos
+version: 1.0.0
+description: Inject LifeOS Agent World context (persona, emotion, memory, world state) before each LLM turn
+provides_hooks:
+  - pre_llm_call
+  - on_session_start
+  - post_llm_call
+  - on_session_end

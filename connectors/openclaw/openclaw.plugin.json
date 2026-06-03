@@ -1,0 +1,11 @@
+{
+  "id": "lifeos",
+  "name": "LifeOS",
+  "description": "Inject LifeOS Agent World context (persona, emotion, memory, world state) before each agent turn",
+  "version": "1.0.0",
+  "configSchema": {
+    "type": "object",
+    "additionalProperties": false,
+    "properties": {}
+  }
+}

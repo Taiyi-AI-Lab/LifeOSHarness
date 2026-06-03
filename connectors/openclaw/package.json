@@ -1,0 +1,10 @@
+{
+  "name": "@lifeos/openclaw-lifeos",
+  "version": "1.0.0",
+  "description": "LifeOS connector plugin for OpenClaw",
+  "type": "module",
+  "private": true,
+  "openclaw": {
+    "extensions": ["./index.ts"]
+  }
+}
