@@ -50,6 +50,22 @@ uv run lifeos world-create --pack alice --name "我的 Alice"
 
 确认 `~/.lifeos/config.json` 含 `server_url`、`api_key`、`default_world_id`。
 
+如果已经有多个 World，可以随时切换 Hermes 默认使用的 World：
+
+```bash
+uv run lifeos world-list
+uv run lifeos world-use --pack musheng
+```
+
+也可以用名称或精确 world_id：
+
+```bash
+uv run lifeos world-use --name "木生"
+uv run lifeos world-use --world-id c93f2ac7-72a0-4a33-97f7-50c2b06a0280
+```
+
+`world-use` 会更新 `~/.lifeos/config.json` 的 `default_world_id`。切换后重启 Hermes，让插件重新读取配置。
+
 ### 2. 安装 Hermes 插件
 
 ```bash

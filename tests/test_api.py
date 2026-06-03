@@ -50,7 +50,8 @@ def test_alice_preset_and_world_flow(client):
     assert body["world_id"] == world_id
     assert "Alice" in body["system"]
     assert "今天有点累" in body["system"]
-    assert "base_system" in body["order"]
+    assert "agent_identity" in body["order"]
+    assert "connector_overlay" not in body["order"]
 
     ended = client.post(
         "/runtime/session/end",
@@ -124,3 +125,29 @@ def test_custom_pack(client):
     )
     assert context.status_code == 200
     assert "Nova" in context.json()["system"]
+
+
+def test_pi_vs_hermes_context_size(client):
+    client.post("/packs/presets/alice", headers=API_HEADERS)
+    world_id = client.post(
+        "/worlds",
+        headers=API_HEADERS,
+        json={"pack_id": "alice", "display_name": "connector diff"},
+    ).json()["world_id"]
+
+    hermes = client.post(
+        "/runtime/context",
+        headers=API_HEADERS,
+        json={"world_id": world_id, "user_message": "你好", "connector_id": "hermes"},
+    ).json()
+    pi = client.post(
+        "/runtime/context",
+        headers=API_HEADERS,
+        json={"world_id": world_id, "user_message": "你好", "connector_id": "pi"},
+    ).json()
+
+    assert len(hermes["system"]) < len(pi["system"])
+    assert "connector_overlay" not in hermes["order"]
+    assert "connector_overlay" in pi["order"]
+    assert "PptxGenJS" not in hermes["system"]
+    assert "todo_write" in pi["system"] or "PptxGenJS" in pi["system"]

@@ -9,6 +9,7 @@ from rich.console import Console
 from rich.panel import Panel
 
 from lifeostomanyagent.client.sdk import ClientConfig, ConfigStore, LifeOSClient
+from lifeostomanyagent.domain.models import WorldResponse
 
 app = typer.Typer(no_args_is_help=True, help="LifeOS client CLI")
 connector_app = typer.Typer(no_args_is_help=True, help="Install LifeOS connectors")
@@ -27,6 +28,32 @@ def _world_id(explicit: str | None) -> str:
     if not world_id:
         raise typer.BadParameter("missing world id; pass --world or run `lifeos world create` and `lifeos login --world-id ...`")
     return world_id
+
+
+def _select_world(
+    worlds: list[WorldResponse],
+    *,
+    world_id: str | None,
+    pack_id: str | None,
+    display_name: str | None,
+) -> WorldResponse:
+    if not any([world_id, pack_id, display_name]):
+        raise typer.BadParameter("pass --world-id, --pack, or --name")
+
+    matches = worlds
+    if world_id:
+        matches = [world for world in matches if world.world_id == world_id]
+    if pack_id:
+        matches = [world for world in matches if world.pack_id == pack_id]
+    if display_name:
+        matches = [world for world in matches if world.display_name == display_name]
+
+    if not matches:
+        raise typer.BadParameter("matched 0 worlds; run `lifeos world-list` to inspect available worlds")
+    if len(matches) > 1:
+        rendered = ", ".join(f"{world.display_name}({world.pack_id}:{world.world_id})" for world in matches)
+        raise typer.BadParameter(f"matched {len(matches)} worlds; add --world-id or --name. matches: {rendered}")
+    return matches[0]
 
 
 @app.command("login")
@@ -60,13 +87,59 @@ def world_create(
     console.print(json.dumps(world.model_dump(), ensure_ascii=False, indent=2))
 
 
+@app.command("world-list")
+def world_list() -> None:
+    config = ConfigStore().load()
+    with LifeOSClient(config) as client:
+        worlds = client.list_worlds()
+
+    if not worlds:
+        console.print("[yellow]暂无 world[/yellow]")
+        return
+
+    default_world_id = config.default_world_id
+    for world in worlds:
+        marker = "*" if world.world_id == default_world_id else " "
+        console.print(f"{marker} {world.world_id}  pack={world.pack_id}  name={world.display_name}")
+
+
+@app.command("world-use")
+def world_use(
+    world_id: str | None = typer.Option(None, "--world-id", help="Exact world_id to set as default"),
+    pack_id: str | None = typer.Option(None, "--pack", help="Select the only world for this pack_id"),
+    name: str | None = typer.Option(None, "--name", help="Select by world display_name"),
+) -> None:
+    store = ConfigStore()
+    config = store.load()
+    with LifeOSClient(config) as client:
+        worlds = client.list_worlds()
+
+    world = _select_world(worlds, world_id=world_id, pack_id=pack_id, display_name=name)
+    previous_world_id = config.default_world_id
+    config.default_world_id = world.world_id
+    store.save(config)
+
+    console.print(
+        json.dumps(
+            {
+                "previous_world_id": previous_world_id,
+                "default_world_id": world.world_id,
+                "pack_id": world.pack_id,
+                "display_name": world.display_name,
+            },
+            ensure_ascii=False,
+            indent=2,
+        )
+    )
+
+
 @app.command("context")
 def context_pull(
     message: str = typer.Argument(...),
     world: str | None = typer.Option(None, "--world"),
     connector: str = typer.Option("generic", "--connector"),
     session_id: str | None = typer.Option(None, "--session-id"),
-    output_format: str = typer.Option("text", "--format", help="text|json"),
+    output_format: str = typer.Option("text", "--format", help="text|json|blocks"),
 ) -> None:
     world_id = _world_id(world)
     with _client() as client:
@@ -78,6 +151,16 @@ def context_pull(
         )
     if output_format == "json":
         console.print_json(result.model_dump_json())
+        return
+    if output_format == "blocks":
+        console.print(f"[bold]world_id[/bold]: {result.world_id}")
+        console.print(f"[bold]connector[/bold]: {result.connector_id}")
+        console.print(f"[bold]总长度[/bold]: {len(result.system)} 字符\n")
+        for i, (block_id, block) in enumerate(zip(result.order, result.blocks), 1):
+            tag = block.tag or "-"
+            console.print(f"  {i}. {block_id:22s} tag={tag:18s} len={block.content_length}")
+        console.print()
+        console.print(Panel(result.system, title=f"LifeOS context ({connector})", border_style="cyan"))
         return
     console.print(Panel(result.system, title=f"LifeOS context ({connector})", border_style="cyan"))
 

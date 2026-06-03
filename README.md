@@ -68,6 +68,8 @@ uv run pytest
 
 ## 文档
 
+- [`docs/database.md`](docs/database.md) — Postgres 表结构、JSON 字段、运行时文件布局
+- [`docs/modern-agent-pack-template.md`](docs/modern-agent-pack-template.md) — 现代人物 Agent Pack 双层生成模板
 - [`docs/pi-connector.md`](docs/pi-connector.md) — pi agent 安装 / 验证 / 卸载
 - [`docs/codex-connector.md`](docs/codex-connector.md) — Codex 安装 / 验证 / 卸载
 - [`docs/claude-code-connector.md`](docs/claude-code-connector.md) — Claude Code 安装 / 验证 / 卸载

@@ -10,8 +10,10 @@ from sqlalchemy.orm import Session
 
 from lifeostomanyagent.config import settings
 from lifeostomanyagent.domain.models import (
+    AgentIdentity,
     AgentPackConfig,
     BehaviorProfile,
+    BehaviorTrajectory,
     ContextRequest,
     ContextResponse,
     PackCreateRequest,
@@ -40,14 +42,19 @@ class LifeOSService:
                 self._redis = None
 
     def ensure_alice_preset(self) -> PackResponse:
+        config_json = build_alice_pack_config()
         existing = self.db.query(AgentPackRow).filter(AgentPackRow.pack_id == "alice").one_or_none()
         if existing:
+            existing.config_json = config_json
+            existing.display_name = "Alice"
+            self.db.commit()
+            self.db.refresh(existing)
             return self._pack_response(existing)
         row = AgentPackRow(
             id=str(uuid.uuid4()),
             pack_id="alice",
             display_name="Alice",
-            config_json=build_alice_pack_config(),
+            config_json=config_json,
             is_preset=True,
         )
         self.db.add(row)
@@ -61,10 +68,12 @@ class LifeOSService:
         config = AgentPackConfig(
             pack_id=payload.pack_id,
             display_name=payload.display_name,
-            base_system_prompt=payload.base_system_prompt,
-            world_rules=payload.world_rules or WorldRules(),
+            identity=payload.identity,
             behavior_profile=payload.behavior_profile or BehaviorProfile(),
+            behavior_trajectory=payload.behavior_trajectory or BehaviorTrajectory(),
+            world_rules=payload.world_rules or WorldRules(),
             runtime_modules=payload.runtime_modules or RuntimeModules(),
+            base_system_prompt=payload.base_system_prompt,
             is_preset=False,
         )
         row = AgentPackRow(

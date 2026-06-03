@@ -49,6 +49,7 @@ class LifeOSClient:
             base_url=config.server_url.rstrip("/"),
             headers={"X-API-Key": config.api_key},
             timeout=60.0,
+            trust_env=False,
         )
 
     def close(self) -> None:
@@ -75,6 +76,11 @@ class LifeOSClient:
         response = self._client.post("/worlds", json=payload.model_dump())
         response.raise_for_status()
         return WorldResponse.model_validate(response.json())
+
+    def list_worlds(self) -> list[WorldResponse]:
+        response = self._client.get("/worlds")
+        response.raise_for_status()
+        return [WorldResponse.model_validate(item) for item in response.json()]
 
     def pull_context(
         self,

@@ -2,13 +2,31 @@ from __future__ import annotations
 
 from typing import Any, Literal
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, model_validator
+
+
+class AgentIdentity(BaseModel):
+    agent_name: str
+    codename: str | None = None
+    identity_code: str | None = None
+    backstory: str = ""
+    relationship_stance: str = ""
+    core_values: list[str] = Field(default_factory=list)
 
 
 class BehaviorProfile(BaseModel):
     speech_style: list[str] = Field(default_factory=list)
     forbidden_patterns: list[str] = Field(default_factory=list)
     emotion_rules: dict[str, Any] = Field(default_factory=dict)
+    work_habits: list[str] = Field(default_factory=list)
+    addressing_rules: list[str] = Field(default_factory=list)
+    inner_voice_prompt: str | None = None
+
+
+class BehaviorTrajectory(BaseModel):
+    milestones: list[str] = Field(default_factory=list)
+    proactive_style: str | None = None
+    reaction_patterns: list[str] = Field(default_factory=list)
 
 
 class WorldRules(BaseModel):
@@ -29,11 +47,19 @@ class RuntimeModules(BaseModel):
 class AgentPackConfig(BaseModel):
     pack_id: str
     display_name: str
-    base_system_prompt: str
-    world_rules: WorldRules = Field(default_factory=WorldRules)
+    identity: AgentIdentity | None = None
     behavior_profile: BehaviorProfile = Field(default_factory=BehaviorProfile)
+    behavior_trajectory: BehaviorTrajectory = Field(default_factory=BehaviorTrajectory)
+    world_rules: WorldRules = Field(default_factory=WorldRules)
     runtime_modules: RuntimeModules = Field(default_factory=RuntimeModules)
     is_preset: bool = False
+    base_system_prompt: str | None = None  # legacy fallback during migration
+
+    @model_validator(mode="after")
+    def _require_identity_or_legacy_prompt(self) -> "AgentPackConfig":
+        if self.identity is None and not (self.base_system_prompt or "").strip():
+            raise ValueError("pack requires identity or base_system_prompt")
+        return self
 
 
 class WorldOverrides(BaseModel):
@@ -74,10 +100,18 @@ class SessionEventRequest(BaseModel):
 class PackCreateRequest(BaseModel):
     pack_id: str
     display_name: str
-    base_system_prompt: str
-    world_rules: WorldRules | None = None
+    identity: AgentIdentity | None = None
     behavior_profile: BehaviorProfile | None = None
+    behavior_trajectory: BehaviorTrajectory | None = None
+    world_rules: WorldRules | None = None
     runtime_modules: RuntimeModules | None = None
+    base_system_prompt: str | None = None  # legacy
+
+    @model_validator(mode="after")
+    def _require_identity_or_legacy_prompt(self) -> "PackCreateRequest":
+        if self.identity is None and not (self.base_system_prompt or "").strip():
+            raise ValueError("pack requires identity or base_system_prompt")
+        return self
 
 
 class WorldCreateRequest(BaseModel):
