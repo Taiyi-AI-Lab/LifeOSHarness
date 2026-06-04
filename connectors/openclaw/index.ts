@@ -17,6 +17,7 @@ import {
 } from "./lifeos-client";
 
 const startedSessions = new Set<string>();
+const activeTurnSessions = new Set<string>();
 
 export default definePluginEntry({
 	id: "lifeos",
@@ -60,15 +61,16 @@ export default definePluginEntry({
 					startedSessions.add(sessionId);
 				}
 
-				await lifeosPost(config, "/runtime/turn/begin", {
-					connector_id: CONNECTOR_ID,
-					session_id: sessionId,
-				});
-
 				const block = await fetchContext(config, sessionId, event.prompt ?? "");
 				if (!block) {
 					return;
 				}
+
+				await lifeosPost(config, "/runtime/turn/begin", {
+					connector_id: CONNECTOR_ID,
+					session_id: sessionId,
+				});
+				activeTurnSessions.add(sessionId);
 
 				const base = event.systemPrompt ?? "";
 				return {
@@ -84,11 +86,15 @@ export default definePluginEntry({
 				return;
 			}
 			const sessionId = resolveSessionId(ctx);
+			if (!activeTurnSessions.has(sessionId)) {
+				return;
+			}
 			await lifeosPost(config, "/runtime/turn/finish", {
 				connector_id: CONNECTOR_ID,
 				session_id: sessionId,
 				meaningful: true,
 			});
+			activeTurnSessions.delete(sessionId);
 		});
 
 		api.on("session_end", async (_event, ctx) => {
@@ -97,6 +103,7 @@ export default definePluginEntry({
 				return;
 			}
 			const sessionId = resolveSessionId(ctx);
+			activeTurnSessions.delete(sessionId);
 			await lifeosPost(config, "/runtime/session/end", {
 				connector_id: CONNECTOR_ID,
 				session_id: sessionId,

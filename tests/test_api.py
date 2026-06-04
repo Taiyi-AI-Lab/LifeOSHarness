@@ -3,6 +3,9 @@ from __future__ import annotations
 from datetime import datetime
 from zoneinfo import ZoneInfo
 
+from lifeostomanyagent.config import settings
+from lifeostomanyagent.server.engine.intent_classifier import IntentClassification
+
 API_HEADERS = {"X-API-Key": "dev-lifeos-key-change-me"}
 
 
@@ -156,6 +159,108 @@ def test_pi_vs_hermes_context_size(client):
     assert "todo_write" in pi["system"] or "PptxGenJS" in pi["system"]
 
 
+def test_context_skips_lifeos_for_task_by_default(client):
+    client.post("/packs/presets/alice", headers=API_HEADERS)
+    world_id = client.post(
+        "/worlds",
+        headers=API_HEADERS,
+        json={"pack_id": "alice", "display_name": "intent gate"},
+    ).json()["world_id"]
+
+    context = client.post(
+        "/runtime/context",
+        headers=API_HEADERS,
+        json={
+            "world_id": world_id,
+            "user_message": "帮我修一下 pytest 报错",
+            "connector_id": "claude-code",
+        },
+    )
+
+    assert context.status_code == 200
+    body = context.json()
+    assert body["system"] == ""
+    assert body["order"] == []
+    assert body["blocks"] == []
+    assert body["resolved_intent"] == "task"
+    assert body["injected"] is False
+    assert body["intent_classifier"] == "rules"
+
+
+def test_context_injects_for_explicit_chitchat_override(client):
+    client.post("/packs/presets/alice", headers=API_HEADERS)
+    world_id = client.post(
+        "/worlds",
+        headers=API_HEADERS,
+        json={"pack_id": "alice", "display_name": "intent override"},
+    ).json()["world_id"]
+
+    context = client.post(
+        "/runtime/context",
+        headers=API_HEADERS,
+        json={
+            "world_id": world_id,
+            "user_message": "帮我修一下 pytest 报错",
+            "connector_id": "claude-code",
+            "interaction_intent": "chitchat",
+        },
+    )
+
+    assert context.status_code == 200
+    body = context.json()
+    assert "Alice" in body["system"]
+    assert body["resolved_intent"] == "chitchat"
+    assert body["injected"] is True
+    assert body["intent_classifier"] == "explicit"
+
+
+def test_context_uses_llm_classifier_when_configured(client, monkeypatch):
+    calls: list[dict] = []
+
+    class FakeIntentClassifier:
+        def __init__(self, **kwargs):
+            calls.append(kwargs)
+
+        def classify(self, user_message: str):
+            assert user_message == "帮我修一下 pytest 报错"
+            return IntentClassification("chitchat", "llm", 0.99, "fake llm")
+
+    monkeypatch.setattr(settings, "lifeos_intent_classifier", "llm")
+    monkeypatch.setattr(settings, "deepseek_api_key", "test-key")
+    monkeypatch.setattr(settings, "deepseek_intent_model", "intent-model")
+    monkeypatch.setattr(settings, "deepseek_intent_base_url", "https://intent.example")
+    monkeypatch.setattr(
+        "lifeostomanyagent.server.services.DeepSeekIntentClassifier",
+        FakeIntentClassifier,
+    )
+
+    client.post("/packs/presets/alice", headers=API_HEADERS)
+    world_id = client.post(
+        "/worlds",
+        headers=API_HEADERS,
+        json={"pack_id": "alice", "display_name": "intent llm"},
+    ).json()["world_id"]
+
+    context = client.post(
+        "/runtime/context",
+        headers=API_HEADERS,
+        json={
+            "world_id": world_id,
+            "user_message": "帮我修一下 pytest 报错",
+            "connector_id": "claude-code",
+        },
+    )
+
+    assert context.status_code == 200
+    body = context.json()
+    assert body["resolved_intent"] == "chitchat"
+    assert body["intent_classifier"] == "llm"
+    assert body["injected"] is True
+    assert calls[0]["api_key"] == "test-key"
+    assert calls[0]["model"] == "intent-model"
+    assert calls[0]["base_url"] == "https://intent.example"
+
+
 def test_dream_run_and_context_injection(client):
     today = datetime.now(ZoneInfo("Asia/Shanghai")).date().isoformat()
     created = client.post(
@@ -220,6 +325,8 @@ def test_dream_run_and_context_injection(client):
     assert "dream_context" in second_context["order"]
     assert "阿嬷的信" in second_context["system"]
 
-    latest = client.get(f"/runtime/dreams/latest?world_id={world_id}", headers=API_HEADERS)
+    latest = client.get(
+        f"/runtime/dreams/latest?world_id={world_id}", headers=API_HEADERS
+    )
     assert latest.status_code == 200
     assert latest.json()["dream"]["dream_date"] == today

@@ -17,6 +17,7 @@ export interface LifeOSConfig {
 
 export interface ContextResponse {
 	system: string;
+	injected?: boolean;
 }
 
 export function loadConfig(): LifeOSConfig | null {
@@ -93,7 +94,7 @@ export async function fetchContext(
 		session_id: sessionId,
 		user_message: userMessage,
 	});
-	if (!result?.system) {
+	if (!result?.injected || !result.system) {
 		return null;
 	}
 	return result.system;

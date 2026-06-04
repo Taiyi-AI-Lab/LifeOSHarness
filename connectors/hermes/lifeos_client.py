@@ -23,7 +23,9 @@ def load_config() -> dict[str, Any]:
         return {}
 
 
-def api_post(config: dict[str, Any], path: str, body: dict[str, Any]) -> dict[str, Any] | None:
+def api_post(
+    config: dict[str, Any], path: str, body: dict[str, Any]
+) -> dict[str, Any] | None:
     server = str(config.get("server_url", DEFAULT_SERVER)).rstrip("/")
     api_key = str(config.get("api_key", ""))
     world_id = config.get("default_world_id")
@@ -62,7 +64,11 @@ def session_end(connector_id: str, session_id: str, *, meaningful: bool = True) 
     api_post(
         config,
         "/runtime/session/end",
-        {"connector_id": connector_id, "session_id": session_id, "meaningful": meaningful},
+        {
+            "connector_id": connector_id,
+            "session_id": session_id,
+            "meaningful": meaningful,
+        },
     )
 
 
@@ -84,7 +90,11 @@ def turn_finish(connector_id: str, session_id: str, *, meaningful: bool = True) 
     api_post(
         config,
         "/runtime/turn/finish",
-        {"connector_id": connector_id, "session_id": session_id, "meaningful": meaningful},
+        {
+            "connector_id": connector_id,
+            "session_id": session_id,
+            "meaningful": meaningful,
+        },
     )
 
 
@@ -101,6 +111,6 @@ def fetch_context(connector_id: str, session_id: str, user_message: str) -> str 
             "user_message": user_message,
         },
     )
-    if not result or not result.get("system"):
+    if not result or not result.get("injected") or not result.get("system"):
         return None
     return str(result["system"])

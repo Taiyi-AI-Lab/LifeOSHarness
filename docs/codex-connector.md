@@ -30,11 +30,11 @@ Codex 事件（与 Claude Code 同名）
     → SessionStart        → lifeos_hook.py session-start codex
                          → POST /runtime/session/start
     → UserPromptSubmit  → lifeos_hook.py user-prompt-submit codex
-                         → POST /runtime/turn/begin
                          → POST /runtime/context
-                         → stdout: hookSpecificOutput.additionalContext
+                         → injected=true 时 POST /runtime/turn/begin
+                         → injected=true 时 stdout: hookSpecificOutput.additionalContext
     → Stop                → lifeos_hook.py stop codex
-                         → POST /runtime/turn/finish
+                         → 若本轮已注入则 POST /runtime/turn/finish
     → SessionEnd          → lifeos_hook.py session-end codex
                          → POST /runtime/session/end
 ```

@@ -74,6 +74,7 @@ class ContextRequest(BaseModel):
     connector_id: str = "generic"
     session_id: str | None = None
     merge_mode: Literal["prepend", "replace", "append"] = "prepend"
+    interaction_intent: Literal["auto", "chitchat", "task"] = "auto"
     extra_blocks: list[str] = Field(default_factory=list)
 
 
@@ -89,6 +90,10 @@ class ContextResponse(BaseModel):
     system: str
     order: list[str]
     blocks: list[ContextBlockTrace]
+    resolved_intent: Literal["chitchat", "task"] = "chitchat"
+    injected: bool = True
+    intent_classifier: str = "rules"
+    intent_reason: str = ""
 
 
 class SessionEventRequest(BaseModel):

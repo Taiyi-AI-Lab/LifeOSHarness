@@ -60,8 +60,9 @@ The runtime state package is copied into this repository and does not require an
 2. The connector calls LifeOS API with `world_id`, `connector_id`, `session_id`, and user message.
 3. `LifeOSService` loads the world metadata and Pack from Postgres.
 4. `WorldRuntimeEngine` opens the world runtime directory and reads enabled state modules.
-5. `PromptComposer` renders ordered context blocks and applies the connector budget.
-6. The connector injects the returned `system` block into the target agent runtime.
+5. `LifeOSService` resolves the interaction intent. By default, deterministic rules only allow clear chitchat / companionship turns to receive LifeOS context; task-like or unknown input returns an empty context. `LIFEOS_INTENT_CLASSIFIER=llm` enables DeepSeek-based intent classification with rule fallback.
+6. For chitchat turns, `PromptComposer` renders ordered context blocks and applies the connector budget.
+7. The connector injects the returned `system` block only when `injected=true`.
 
 ## Context Block Order
 
@@ -82,6 +83,16 @@ The default order is:
 
 Protected runtime blocks are preserved during trimming where possible, while lower-priority static blocks can be dropped or compacted when a connector has a small budget.
 
+## Intent Gate
+
+`/runtime/context` is guarded by an intent classifier so LifeOS persona, emotion, memory, dreams, and world state are injected only for clear chitchat / companionship turns.
+
+- `interaction_intent=auto` uses the configured classifier.
+- `interaction_intent=chitchat` or `task` explicitly overrides classification.
+- `LIFEOS_INTENT_CLASSIFIER=rules` is the default and prefers `task` for any task signal or unknown message.
+- `LIFEOS_INTENT_CLASSIFIER=llm` uses DeepSeek for classification, then falls back to rules if the model is unavailable, low-confidence, or returns invalid JSON.
+- Task turns return `system=""`, `injected=false`, and no context blocks.
+
 ## Connector Strategy
 
 Connectors are intentionally thin. They should:
@@ -89,7 +100,7 @@ Connectors are intentionally thin. They should:
 - Load local LifeOS config from `~/.lifeos/config.json` or environment variables.
 - Notify LifeOS about session and turn events.
 - Pull `/runtime/context` before model execution.
-- Merge the returned context according to the target runtime's supported hook shape.
+- Merge the returned context according to the target runtime's supported hook shape when `injected=true`.
 
 Connector-specific playbooks belong in overlays, not in the core Pack model.
 

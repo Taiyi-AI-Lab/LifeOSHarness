@@ -26,10 +26,10 @@ LifeOS 通过 **OpenClaw 原生 TypeScript Plugin** 在模型调用前合并 sys
 ```
 OpenClaw agent 轮次
     → session_start (reason=new)  → POST /runtime/session/start
-    → before_prompt_build         → POST /runtime/turn/begin
-                                  → POST /runtime/context
-                                  → 返回 systemPrompt（LifeOS 块 + 原 system）
-    → agent_end                   → POST /runtime/turn/finish
+    → before_prompt_build         → POST /runtime/context
+                                  → injected=true 时 POST /runtime/turn/begin
+                                  → injected=true 时返回 systemPrompt（LifeOS 块 + 原 system）
+    → agent_end                   → 若本轮已注入则 POST /runtime/turn/finish
     → session_end                 → POST /runtime/session/end
 ```
 
