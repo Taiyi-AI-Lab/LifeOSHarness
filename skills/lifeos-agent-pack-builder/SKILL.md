@@ -64,4 +64,4 @@ uv run pytest tests/test_modern_agent_pack_template.py
 
 Then query `/packs` and `/worlds` or use the script output to confirm the new character is present.
 
-If `docs/agent-packs/*` is ignored by git, tell the user the Markdown exists locally and was used for import, but will not appear in `git status` unless the ignore rule changes.
+For open-source character packs, ensure generated `docs/agent-packs/*.md` files are visible in `git status` and committed with the related workflow changes. Keep private or experimental character packs outside the repository.

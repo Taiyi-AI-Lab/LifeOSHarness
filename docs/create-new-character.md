@@ -198,7 +198,7 @@ docs/modern-agent-pack-template.md
 docs/agent-packs/
 ```
 
-注意：当前仓库的 `.gitignore` 忽略了 `docs/agent-packs/*`。这些文件可用于本地生成和入库；如需开源发布某个角色包，需要调整 ignore 规则或显式纳入版本控制。
+注意：开源角色包应纳入版本控制。新增或修改 `docs/agent-packs/*.md` 后，应确认它出现在 `git status` 中，并随相关文档或入库脚本一起提交。
 
 ### 3. 设计现代身份
 
@@ -511,9 +511,9 @@ uv run pytest tests/test_api.py tests/test_runtime.py tests/test_sql_storage.py
 
 同一 Pack 可以创建多个 World，但建议在普通角色创建流程中避免重复。脚本会用 `pack_id + display_name` 判断是否已有同名 World。
 
-### 为什么 `docs/agent-packs/*.md` 不显示在 git status？
+### 为什么 `docs/agent-packs/*.md` 没有进入提交？
 
-当前 `.gitignore` 忽略了 `docs/agent-packs/*`。这些文件仍可在本地生成和入库。如果要开源角色包，需要调整 ignore 规则或显式添加文件。
+先检查 `.gitignore` 是否有忽略规则，再运行 `git status --short docs/agent-packs`。开源角色包应提交到仓库；如果只是本地实验角色，可以放在仓库外或明确标记为本地产物。
 
 ### 新角色是否必须启用 dreams？
 
