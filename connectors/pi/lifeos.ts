@@ -28,6 +28,7 @@ interface LifeOSConfig {
 
 interface ContextResponse {
 	system: string;
+	injected?: boolean;
 }
 
 function loadConfig(): LifeOSConfig | null {
@@ -88,6 +89,7 @@ function mergePrompt(base: string, lifeosBlock: string, mode: "prepend" | "appen
 
 export default function lifeosExtension(pi: ExtensionAPI) {
 	const startedSessions = new Set<string>();
+	const activeTurnSessions = new Set<string>();
 
 	pi.registerCommand("lifeos", {
 		description: "Show LifeOS connector status (/lifeos)",
@@ -127,12 +129,6 @@ export default function lifeosExtension(pi: ExtensionAPI) {
 			startedSessions.add(sessionId);
 		}
 
-		await lifeosPost(config, "/runtime/turn/begin", {
-			world_id: config.worldId,
-			connector_id: CONNECTOR_ID,
-			session_id: sessionId,
-		});
-
 		const context = await lifeosPost<ContextResponse>(config, "/runtime/context", {
 			world_id: config.worldId,
 			user_message: event.prompt,
@@ -140,12 +136,22 @@ export default function lifeosExtension(pi: ExtensionAPI) {
 			session_id: sessionId,
 		});
 
-		if (!context?.system) {
+		if (!context) {
 			if (ctx.hasUI) {
 				ctx.ui.notify("LifeOS context 拉取失败，使用 pi 默认 system prompt", "warning");
 			}
 			return undefined;
 		}
+		if (!context.injected || !context.system) {
+			return undefined;
+		}
+
+		await lifeosPost(config, "/runtime/turn/begin", {
+			world_id: config.worldId,
+			connector_id: CONNECTOR_ID,
+			session_id: sessionId,
+		});
+		activeTurnSessions.add(sessionId);
 
 		return {
 			systemPrompt: mergePrompt(event.systemPrompt, context.system, config.mergeMode),
@@ -158,12 +164,16 @@ export default function lifeosExtension(pi: ExtensionAPI) {
 			return;
 		}
 		const sessionId = ctx.sessionManager.getSessionId();
+		if (!activeTurnSessions.has(sessionId)) {
+			return;
+		}
 		await lifeosPost(config, "/runtime/turn/finish", {
 			world_id: config.worldId,
 			connector_id: CONNECTOR_ID,
 			session_id: sessionId,
 			meaningful: true,
 		});
+		activeTurnSessions.delete(sessionId);
 	});
 
 	pi.on("session_shutdown", async (_event, ctx) => {
@@ -172,6 +182,7 @@ export default function lifeosExtension(pi: ExtensionAPI) {
 			return;
 		}
 		const sessionId = ctx.sessionManager.getSessionId();
+		activeTurnSessions.delete(sessionId);
 		await lifeosPost(config, "/runtime/session/end", {
 			world_id: config.worldId,
 			connector_id: CONNECTOR_ID,

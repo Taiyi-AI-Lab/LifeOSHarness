@@ -10,6 +10,8 @@ import urllib.request
 from pathlib import Path
 from typing import Any
 
+ACTIVE_TURNS_PATH = Path.home() / ".lifeos" / "active_turns.json"
+
 
 def load_config() -> dict[str, Any]:
     path = Path.home() / ".lifeos" / "config.json"
@@ -22,7 +24,9 @@ def load_config() -> dict[str, Any]:
         return {}
 
 
-def api_post(config: dict[str, Any], path: str, body: dict[str, Any]) -> dict[str, Any] | None:
+def api_post(
+    config: dict[str, Any], path: str, body: dict[str, Any]
+) -> dict[str, Any] | None:
     server = str(config.get("server_url", "http://127.0.0.1:8000")).rstrip("/")
     api_key = str(config.get("api_key", ""))
     world_id = config.get("default_world_id")
@@ -64,17 +68,49 @@ def emit_context(context: str) -> None:
     sys.stdout.write(json.dumps(payload, ensure_ascii=False))
 
 
+def _turn_key(connector_id: str, session_id: str) -> str:
+    return f"{connector_id}:{session_id}"
+
+
+def load_active_turns() -> set[str]:
+    if not ACTIVE_TURNS_PATH.exists():
+        return set()
+    try:
+        data = json.loads(ACTIVE_TURNS_PATH.read_text("utf-8"))
+    except json.JSONDecodeError:
+        return set()
+    if not isinstance(data, list):
+        return set()
+    return {str(item) for item in data}
+
+
+def save_active_turns(turns: set[str]) -> None:
+    ACTIVE_TURNS_PATH.parent.mkdir(parents=True, exist_ok=True)
+    ACTIVE_TURNS_PATH.write_text(json.dumps(sorted(turns), ensure_ascii=False), "utf-8")
+
+
+def mark_active_turn(connector_id: str, session_id: str) -> None:
+    turns = load_active_turns()
+    turns.add(_turn_key(connector_id, session_id))
+    save_active_turns(turns)
+
+
+def consume_active_turn(connector_id: str, session_id: str) -> bool:
+    turns = load_active_turns()
+    key = _turn_key(connector_id, session_id)
+    if key not in turns:
+        return False
+    turns.remove(key)
+    save_active_turns(turns)
+    return True
+
+
 def handle_user_prompt_submit(connector_id: str, event: dict[str, Any]) -> int:
     config = load_config()
     if not config.get("default_world_id"):
         return 0
     session_id = str(event.get("session_id") or "unknown")
     prompt = str(event.get("prompt") or "")
-    api_post(
-        config,
-        "/runtime/turn/begin",
-        {"connector_id": connector_id, "session_id": session_id},
-    )
     result = api_post(
         config,
         "/runtime/context",
@@ -84,8 +120,14 @@ def handle_user_prompt_submit(connector_id: str, event: dict[str, Any]) -> int:
             "user_message": prompt,
         },
     )
-    if not result or not result.get("system"):
+    if not result or not result.get("injected") or not result.get("system"):
         return 0
+    api_post(
+        config,
+        "/runtime/turn/begin",
+        {"connector_id": connector_id, "session_id": session_id},
+    )
+    mark_active_turn(connector_id, session_id)
     emit_context(str(result["system"]))
     return 0
 
@@ -104,6 +146,8 @@ def handle_session_start(connector_id: str, event: dict[str, Any]) -> int:
 def handle_stop(connector_id: str, event: dict[str, Any]) -> int:
     config = load_config()
     session_id = str(event.get("session_id") or "unknown")
+    if not consume_active_turn(connector_id, session_id):
+        return 0
     api_post(
         config,
         "/runtime/turn/finish",
@@ -115,6 +159,7 @@ def handle_stop(connector_id: str, event: dict[str, Any]) -> int:
 def handle_session_end(connector_id: str, event: dict[str, Any]) -> int:
     config = load_config()
     session_id = str(event.get("session_id") or "unknown")
+    consume_active_turn(connector_id, session_id)
     api_post(
         config,
         "/runtime/session/end",

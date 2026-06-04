@@ -10,7 +10,6 @@ from sqlalchemy.orm import Session
 
 from lifeostomanyagent.config import settings
 from lifeostomanyagent.domain.models import (
-    AgentIdentity,
     AgentPackConfig,
     BehaviorProfile,
     BehaviorTrajectory,
@@ -28,7 +27,16 @@ from lifeostomanyagent.domain.models import (
     WorldResponse,
     WorldRules,
 )
-from lifeostomanyagent.server.db.models import AgentPackRow, SessionRecordRow, WorldInstanceRow
+from lifeostomanyagent.server.db.models import (
+    AgentPackRow,
+    SessionRecordRow,
+    WorldInstanceRow,
+)
+from lifeostomanyagent.server.engine.intent_classifier import (
+    DeepSeekIntentClassifier,
+    IntentClassification,
+    classify_intent,
+)
 from lifeostomanyagent.server.engine.runtime import WorldRuntimeEngine
 from lifeostomanyagent.server.presets.alice import build_alice_pack_config
 
@@ -46,7 +54,11 @@ class LifeOSService:
 
     def ensure_alice_preset(self) -> PackResponse:
         config_json = build_alice_pack_config()
-        existing = self.db.query(AgentPackRow).filter(AgentPackRow.pack_id == "alice").one_or_none()
+        existing = (
+            self.db.query(AgentPackRow)
+            .filter(AgentPackRow.pack_id == "alice")
+            .one_or_none()
+        )
         if existing:
             existing.config_json = config_json
             existing.display_name = "Alice"
@@ -66,7 +78,11 @@ class LifeOSService:
         return self._pack_response(row)
 
     def create_pack(self, payload: PackCreateRequest) -> PackResponse:
-        if self.db.query(AgentPackRow).filter(AgentPackRow.pack_id == payload.pack_id).one_or_none():
+        if (
+            self.db.query(AgentPackRow)
+            .filter(AgentPackRow.pack_id == payload.pack_id)
+            .one_or_none()
+        ):
             raise ValueError(f"pack already exists: {payload.pack_id}")
         config = AgentPackConfig(
             pack_id=payload.pack_id,
@@ -123,13 +139,32 @@ class LifeOSService:
         return self._world_response(row)
 
     def list_worlds(self) -> list[WorldResponse]:
-        rows = self.db.query(WorldInstanceRow).order_by(WorldInstanceRow.created_at.asc()).all()
+        rows = (
+            self.db.query(WorldInstanceRow)
+            .order_by(WorldInstanceRow.created_at.asc())
+            .all()
+        )
         return [self._world_response(row) for row in rows]
 
     def build_context(self, payload: ContextRequest) -> ContextResponse:
+        intent = self._classify_context_intent(payload)
+        if intent.resolved_intent == "task":
+            self._get_world_row(payload.world_id)
+            return ContextResponse(
+                world_id=payload.world_id,
+                connector_id=payload.connector_id,
+                system="",
+                order=[],
+                blocks=[],
+                resolved_intent=intent.resolved_intent,
+                injected=False,
+                intent_classifier=intent.classifier,
+                intent_reason=intent.reason,
+            )
+
         engine = self._engine_for_world(payload.world_id)
         use_cache = not bool(engine.dreams)
-        cache_key = self._cache_key(payload)
+        cache_key = self._cache_key(payload, intent)
         cached = self._cache_get(cache_key) if use_cache else None
         if cached:
             return ContextResponse.model_validate(cached)
@@ -145,9 +180,17 @@ class LifeOSService:
             system=result["system"],
             order=result["order"],
             blocks=[
-                {"id": block["id"], "tag": block.get("tag"), "content_length": block["contentLength"]}
+                {
+                    "id": block["id"],
+                    "tag": block.get("tag"),
+                    "content_length": block["contentLength"],
+                }
                 for block in result["blocks"]
             ],
+            resolved_intent=intent.resolved_intent,
+            injected=bool(result["system"]),
+            intent_classifier=intent.classifier,
+            intent_reason=intent.reason,
         )
         if use_cache:
             self._cache_set(cache_key, response.model_dump())
@@ -157,7 +200,9 @@ class LifeOSService:
         from datetime import datetime, timezone
 
         engine = self._engine_for_world(payload.world_id)
-        state = engine.on_chat_started(connector_id=payload.connector_id, session_id=payload.session_id)
+        state = engine.on_chat_started(
+            connector_id=payload.connector_id, session_id=payload.session_id
+        )
         row = SessionRecordRow(
             world_id=payload.world_id,
             connector_id=payload.connector_id,
@@ -195,7 +240,9 @@ class LifeOSService:
 
     def turn_begin(self, payload: SessionEventRequest) -> dict:
         engine = self._engine_for_world(payload.world_id)
-        state = engine.on_chat_started(connector_id=payload.connector_id, session_id=payload.session_id)
+        state = engine.on_chat_started(
+            connector_id=payload.connector_id, session_id=payload.session_id
+        )
         self._invalidate_world_cache(payload.world_id)
         return {"ok": True, "emotion": state}
 
@@ -211,7 +258,9 @@ class LifeOSService:
 
     def dream_run(self, payload: DreamRunRequest) -> DreamRunResponse:
         engine = self._engine_for_world(payload.world_id)
-        result = engine.ensure_due_dream(dream_date=payload.dream_date, force=payload.force)
+        result = engine.ensure_due_dream(
+            dream_date=payload.dream_date, force=payload.force
+        )
         if result is None:
             latest = engine.latest_dream()
             if latest is None:
@@ -219,7 +268,11 @@ class LifeOSService:
             else:
                 result = {"created": False, "dream": latest}
         self._invalidate_world_cache(payload.world_id)
-        return DreamRunResponse(world_id=payload.world_id, created=bool(result["created"]), dream=result["dream"])
+        return DreamRunResponse(
+            world_id=payload.world_id,
+            created=bool(result["created"]),
+            dream=result["dream"],
+        )
 
     def dream_latest(self, world_id: str) -> DreamLatestResponse:
         engine = self._engine_for_world(world_id)
@@ -233,13 +286,21 @@ class LifeOSService:
         return WorldRuntimeEngine(Path(row.runtime_dir), pack, overrides)
 
     def _get_pack_row(self, pack_id: str) -> AgentPackRow:
-        row = self.db.query(AgentPackRow).filter(AgentPackRow.pack_id == pack_id).one_or_none()
+        row = (
+            self.db.query(AgentPackRow)
+            .filter(AgentPackRow.pack_id == pack_id)
+            .one_or_none()
+        )
         if not row:
             raise KeyError(f"pack not found: {pack_id}")
         return row
 
     def _get_world_row(self, world_id: str) -> WorldInstanceRow:
-        row = self.db.query(WorldInstanceRow).filter(WorldInstanceRow.world_id == world_id).one_or_none()
+        row = (
+            self.db.query(WorldInstanceRow)
+            .filter(WorldInstanceRow.world_id == world_id)
+            .one_or_none()
+        )
         if not row:
             raise KeyError(f"world not found: {world_id}")
         return row
@@ -262,13 +323,36 @@ class LifeOSService:
             overrides=WorldOverrides.model_validate(row.overrides_json or {}),
         )
 
-    def _cache_key(self, payload: ContextRequest) -> str:
+    def _classify_context_intent(self, payload: ContextRequest) -> IntentClassification:
+        llm_classifier = None
+        if (
+            payload.interaction_intent == "auto"
+            and settings.lifeos_intent_classifier.strip().lower() == "llm"
+        ):
+            api_key = (settings.deepseek_api_key or "").strip()
+            if api_key:
+                llm_classifier = DeepSeekIntentClassifier(
+                    api_key=api_key,
+                    model=settings.deepseek_intent_model,
+                    base_url=settings.intent_base_url,
+                    timeout_seconds=settings.lifeos_intent_timeout_seconds,
+                )
+        return classify_intent(
+            payload.user_message,
+            requested_intent=payload.interaction_intent,
+            llm_classifier=llm_classifier,
+        )
+
+    def _cache_key(self, payload: ContextRequest, intent: IntentClassification) -> str:
         digest = hashlib.sha256(
             json.dumps(
                 {
                     "world_id": payload.world_id,
                     "message": payload.user_message,
                     "connector_id": payload.connector_id,
+                    "interaction_intent": payload.interaction_intent,
+                    "resolved_intent": intent.resolved_intent,
+                    "intent_classifier": intent.classifier,
                     "extra": payload.extra_blocks,
                 },
                 ensure_ascii=False,
@@ -288,10 +372,16 @@ class LifeOSService:
     def _cache_set(self, key: str, value: dict) -> None:
         if not self._redis:
             return
-        self._redis.setex(key, settings.context_cache_ttl_seconds, json.dumps(value, ensure_ascii=False))
+        self._redis.setex(
+            key,
+            settings.context_cache_ttl_seconds,
+            json.dumps(value, ensure_ascii=False),
+        )
 
     def _invalidate_world_cache(self, world_id: str) -> None:
         if not self._redis:
             return
-        for key in self._redis.scan_iter(match=f"lifeos:context:{world_id}:*", count=100):
+        for key in self._redis.scan_iter(
+            match=f"lifeos:context:{world_id}:*", count=100
+        ):
             self._redis.delete(key)

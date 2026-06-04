@@ -29,10 +29,10 @@ LifeOS 通过 **pi TypeScript Extension** 在每轮 agent 启动前合并 system
 pi 用户发送消息
     → before_agent_start（Extension）
          首次该 session → POST /runtime/session/start
-         每轮           → POST /runtime/turn/begin
-                         → POST /runtime/context
-                         → 返回 systemPrompt = LifeOS 块 + pi 原 system
-    → agent_end        → POST /runtime/turn/finish
+         每轮           → POST /runtime/context
+                         → injected=true 时 POST /runtime/turn/begin
+                         → injected=true 时返回 systemPrompt = LifeOS 块 + pi 原 system
+    → agent_end        → 若本轮已注入则 POST /runtime/turn/finish
     → session_shutdown → POST /runtime/session/end
 ```
 

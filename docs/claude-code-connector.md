@@ -28,11 +28,11 @@ Claude Code 事件
     → SessionStart        → lifeos_hook.py session-start claude-code
                          → POST /runtime/session/start
     → UserPromptSubmit  → lifeos_hook.py user-prompt-submit claude-code
-                         → POST /runtime/turn/begin
                          → POST /runtime/context
-                         → stdout: hookSpecificOutput.additionalContext
+                         → injected=true 时 POST /runtime/turn/begin
+                         → injected=true 时 stdout: hookSpecificOutput.additionalContext
     → Stop                → lifeos_hook.py stop claude-code
-                         → POST /runtime/turn/finish
+                         → 若本轮已注入则 POST /runtime/turn/finish
     → SessionEnd          → lifeos_hook.py session-end claude-code
                          → POST /runtime/session/end
 ```
