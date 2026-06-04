@@ -91,4 +91,4 @@ if __name__ == "__main__":
         raise SystemExit(main())
     except Exception as error:
         print(f"error: {error}", file=sys.stderr)
-        raise SystemExit(1)
+        raise SystemExit(1) from None
