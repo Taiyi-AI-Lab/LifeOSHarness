@@ -13,12 +13,14 @@ The format is based on Keep a Changelog, and this project follows Semantic Versi
 - Added optional DeepSeek-based intent classification via `LIFEOS_INTENT_CLASSIFIER=llm`, with deterministic rule fallback.
 - Added community and contribution files: `AGENTS.md`, `CONTRIBUTING.md`, and `CODE_OF_CONDUCT.md`.
 - Added backend-only repository scope notes and a security deployment checklist.
+- Added public roadmap sections to the English and Chinese README files.
 
 ### Changed
 
 - Changed Docker Compose to start the API with SQLite by default; PostgreSQL and Redis are now optional profiles.
 - Updated connectors to start and finish LifeOS turns only when context was actually injected.
 - Replaced machine-specific paths and removed dead Electron IPC metadata from backend world debug specs.
+- Removed the repository scope callout from the English and Chinese README introductions.
 
 ## 0.1.0 - 2026-06-03
 

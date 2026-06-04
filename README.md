@@ -2,8 +2,6 @@
 
 Chinese version: [readme_zh.md](readme_zh.md)
 
-> **Repository scope:** This repository is the **LifeOS Platform backend** — a Python/FastAPI Agent World Runtime plus its connectors and CLI/SDK. The **Alice desktop client** (an Electron companion app) is part of the larger product vision and roadmap, but its code is **not** included here. Everything in this repo runs as a headless, self-hosted backend service.
-
 LifeOS Platform is a local-first, self-hosted Agent World Runtime for warmer, more continuous agents. It gives an agent a durable identity, memory, emotional state, life context, dreams, and a shared world that can follow the user across multiple agent clients.
 
 LifeOS is built around a simple idea: warmth is architecture. A warmer agent is not just friendlier in tone. It remembers relationships, carries emotional continuity, understands life context, keeps shared experiences, and remains recognizably the same companion across different tools. Claude Code, Codex, pi, Hermes, OpenClaw, and other runtimes can all pull context from the same LifeOS World through connectors.
@@ -38,6 +36,34 @@ flowchart TD
 - **Runtime State**: embedded local state systems backed by the configured SQL database, with no external private checkout required.
 - **Prompt Composer**: assembles connector-aware system context by budget and priority.
 - **Connector**: injects LifeOS context into Claude Code, Codex, pi, Hermes, OpenClaw, and other agent runtimes.
+
+## Roadmap
+
+LifeOS Platform is open source and evolving in public. The current priority is to make the runtime visible, editable, and safe to operate before expanding into richer multi-agent worlds.
+
+1. **Production-ready server and visual console**
+
+   Bring the server closer to a deployable product and add a web console for inspecting Worlds, Agent Packs, persona state, memory, emotion, dreams, world facts, and connector context injection. The goal is to make the hidden runtime state observable instead of forcing users to reason from API responses alone.
+
+2. **Agent creation and an early Agent Pack marketplace**
+
+   Provide a guided template flow for creating agents from structured fields: identity, relationship stance, speech style, behavior boundaries, world rules, and enabled runtime modules. Later iterations can support Pack import/export, versioning, curated presets, and a lightweight community marketplace for reusable Agent Packs.
+
+3. **Multi-agent Worlds and AI society primitives**
+
+   Extend the model from one user plus one agent to Worlds that can contain multiple agents. The first step is a lightweight event bus, agent relationship graph, and shared world timeline. More advanced iterations can explore schedules, observation, reflection, agent-to-agent dialogue, group events, and Stanford Smallville-style social simulation.
+
+4. **Richer character data systems**
+
+   Expand runtime state beyond the current persona, emotion, memory, world facts, and dreams modules. Candidate systems include long-term relationship curves, preference confidence, life assets, location familiarity, shared experiences, private agent journals, social relationships, goals, and plans.
+
+5. **Runtime observability and debugging**
+
+   Add traceable explanations for each `/runtime/context` call: why context was or was not injected, how the intent gate classified the interaction, which context blocks were included or trimmed, and how agent state changed after a session or turn. This should make connector behavior easier to debug and improve.
+
+6. **Product-grade deployment and security**
+
+   Move beyond a single shared API key toward user and project isolation, world-level permissions, database migrations, backup and restore flows, deployment guides, and stronger public deployment checklists. These pieces are required before LifeOS is safe to expose outside trusted local environments.
 
 ## 5-Minute Quickstart
 

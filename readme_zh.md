@@ -2,8 +2,6 @@
 
 English version: [README.md](README.md)
 
-> **仓库定位：** 本仓库是 **LifeOS Platform 后端平台** —— 一个基于 Python/FastAPI 的 Agent World Runtime，外加各类 Connector 与 CLI/SDK。**Alice 桌面客户端**（Electron 伴侣应用）属于更大的产品愿景与 roadmap，其代码**不包含**在本仓库中。本仓库的所有内容都作为无界面、自托管的后端服务运行。
-
 LifeOS Platform 是一个 local-first、自托管的 Agent World Runtime，用来构建更有温度、更有连续性的 Agent。它给 Agent 一个持久身份、记忆、情绪状态、生活背景、梦境和可跨多个 Agent 客户端共享的世界。
 
 LifeOS 的目标是让 Agent 更有温度。温度不是多说几句亲切话，而是它能记得关系、承接情绪、理解生活背景、保留共同经历，并且在不同工具里仍然像同一个持续存在的伙伴。Claude Code、Codex、pi、Hermes、OpenClaw 等不同运行时都可以通过 Connector 拉取同一个 World 的上下文。
@@ -38,6 +36,34 @@ flowchart TD
 - **Runtime State**：仓库内嵌的状态子系统，读写当前配置的 SQL 数据库，不依赖外部私有目录。
 - **Prompt Composer**：按 connector、预算和优先级组装 system context。
 - **Connector**：把 LifeOS context 注入到 Claude Code、Codex、pi、Hermes、OpenClaw 等 agent runtime。
+
+## Roadmap
+
+LifeOS Platform 已经开源，后续会优先把 runtime 做到可见、可编辑、可安全运行，再逐步扩展到更丰富的多 Agent 世界。
+
+1. **Server 上线与可视化控制台**
+
+   推进 server 走向可部署产品，并构建 Web 控制台，用来查看 Worlds、Agent Packs、persona 状态、memory、emotion、dreams、world facts 和 connector context 注入结果。目标是让隐藏在后端里的 runtime state 变得可观察，而不是只能从 API 响应里猜系统发生了什么。
+
+2. **角色创建与 Agent Pack 市场雏形**
+
+   提供基于模板的角色创建流程，让用户可以从结构化字段创建 Agent：身份、关系定位、说话风格、行为边界、世界规则和启用的 runtime 模块。后续可以支持 Pack 导入/导出、版本管理、精选预设和轻量社区市场，让 Agent Pack 可以复用和分享。
+
+3. **多角色 World 与 AI 社会系统**
+
+   从“一个用户 + 一个角色”的模型升级到一个 World 中存在多个 Agent。第一步会先做轻量事件总线、角色关系图和共享世界时间线；更后续再探索日程、观察、反思、角色间对话、群体事件，以及类似 Stanford Smallville 的社会模拟能力。
+
+4. **更丰富的角色数据系统**
+
+   在现有 persona、emotion、memory、world facts 和 dreams 之外，继续扩展角色数据层。候选方向包括长期关系曲线、偏好置信度、生活资产、地点熟悉度、共同经历、角色私有日记、社交关系、目标与计划。
+
+5. **运行时观测与调试系统**
+
+   为每次 `/runtime/context` 调用提供可追踪解释：为什么注入或不注入 context，intent gate 如何判断 chitchat/task，哪些 context blocks 被保留或裁剪，session/turn 结束后角色状态如何变化。这会让 connector 行为更容易调试和迭代。
+
+6. **产品级部署与安全**
+
+   从单共享 API key 逐步升级到用户/项目隔离、world 权限、数据库迁移、备份恢复、部署文档和更严格的公开部署检查清单。这些能力是 LifeOS 从本地可信环境走向公开部署前必须补齐的基础设施。
 
 ## 5 分钟 Quickstart
 
