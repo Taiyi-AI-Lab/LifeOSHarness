@@ -5,6 +5,8 @@ import time
 from pathlib import Path
 from typing import Any
 
+from lifeostomanyagent.server.runtime_state.sql_store import SQLRuntimeStore
+
 DEFAULT_STATE = {
     "mood": 58,
     "energy": 62,
@@ -27,9 +29,11 @@ def _clamp(value: int | float, low: int = 0, high: int = 100) -> int:
 
 
 class AlicePersonaSystem:
-    def __init__(self, file_path: str):
-        self.file_path = Path(file_path)
-        self.file_path.parent.mkdir(parents=True, exist_ok=True)
+    def __init__(self, file_path: str | None = None, *, store: SQLRuntimeStore | None = None):
+        self.store = store
+        self.file_path = Path(file_path) if file_path else None
+        if self.file_path:
+            self.file_path.parent.mkdir(parents=True, exist_ok=True)
         data = self._load()
         self.state: dict[str, Any] = {**DEFAULT_STATE, **data.get("state", {})}
         self.interests: list[dict[str, Any]] = data.get("interests", [])
@@ -45,7 +49,9 @@ class AlicePersonaSystem:
         self._persist()
 
     def _load(self) -> dict[str, Any]:
-        if not self.file_path.exists():
+        if self.store:
+            return self.store.load_document("persona") or {}
+        if not self.file_path or not self.file_path.exists():
             return {}
         try:
             data = json.loads(self.file_path.read_text("utf-8"))
@@ -54,19 +60,18 @@ class AlicePersonaSystem:
             return {}
 
     def _persist(self) -> None:
-        self.file_path.write_text(
-            json.dumps(
-                {
-                    "state": self.state,
-                    "relationship": self.relationship,
-                    "interests": self.interests,
-                    "journal": self.journal,
-                },
-                ensure_ascii=False,
-                indent=2,
-            ),
-            "utf-8",
-        )
+        payload = {
+            "state": self.state,
+            "relationship": self.relationship,
+            "interests": self.interests,
+            "journal": self.journal,
+        }
+        if self.store:
+            self.store.save_document("persona", payload)
+            return
+        if not self.file_path:
+            return
+        self.file_path.write_text(json.dumps(payload, ensure_ascii=False, indent=2), "utf-8")
 
     def update_state(self, **changes: Any) -> dict[str, Any]:
         for key, value in changes.items():
@@ -124,7 +129,11 @@ class AlicePersonaSystem:
 
     def record_journal(self, content: str, *, now: int | None = None) -> dict[str, Any]:
         now = now if now is not None else _now()
-        entry = {"id": f"journal_{now}_{len(self.journal) + 1}", "content": content, "createdAt": now}
+        entry = {
+            "id": f"journal_{now}_{len(self.journal) + 1}",
+            "content": content,
+            "createdAt": now,
+        }
         self.journal.append(entry)
         self.journal = self.journal[-50:]
         self._persist()
@@ -146,7 +155,9 @@ class AlicePersonaSystem:
             lines.append("# Interests")
             for interest in self.interests[-8:]:
                 note = f"：{interest['note']}" if interest.get("note") else ""
-                lines.append(f"- [{interest['type']}/{interest['status']}] {interest['title']}{note}")
+                lines.append(
+                    f"- [{interest['type']}/{interest['status']}] {interest['title']}{note}"
+                )
         if self.journal:
             lines.append("# Recent Journal")
             for entry in self.journal[-5:]:

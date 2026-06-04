@@ -2,9 +2,12 @@ from __future__ import annotations
 
 import hashlib
 import json
+import logging
+import sqlite3
 import uuid
-from datetime import UTC
+from datetime import UTC, datetime
 from pathlib import Path
+from typing import Any
 
 import redis
 from sqlalchemy.orm import Session
@@ -30,7 +33,17 @@ from lifeostomanyagent.domain.models import (
 )
 from lifeostomanyagent.server.db.models import (
     AgentPackRow,
+    DreamRecordRow,
+    DreamSeedRow,
+    FactEventRow,
+    MemorySnapshotRow,
+    RuntimeMigrationRow,
+    RuntimeStateDocumentRow,
     SessionRecordRow,
+    UserMemoryRow,
+    VenueVisitRow,
+    WorldClockEventRow,
+    WorldFactRow,
     WorldInstanceRow,
 )
 from lifeostomanyagent.server.engine.intent_classifier import (
@@ -40,6 +53,8 @@ from lifeostomanyagent.server.engine.intent_classifier import (
 )
 from lifeostomanyagent.server.engine.runtime import WorldRuntimeEngine
 from lifeostomanyagent.server.presets.alice import build_alice_pack_config
+
+logger = logging.getLogger(__name__)
 
 
 class LifeOSService:
@@ -55,11 +70,7 @@ class LifeOSService:
 
     def ensure_alice_preset(self) -> PackResponse:
         config_json = build_alice_pack_config()
-        existing = (
-            self.db.query(AgentPackRow)
-            .filter(AgentPackRow.pack_id == "alice")
-            .one_or_none()
-        )
+        existing = self.db.query(AgentPackRow).filter(AgentPackRow.pack_id == "alice").one_or_none()
         if existing:
             existing.config_json = config_json
             existing.display_name = "Alice"
@@ -140,11 +151,7 @@ class LifeOSService:
         return self._world_response(row)
 
     def list_worlds(self) -> list[WorldResponse]:
-        rows = (
-            self.db.query(WorldInstanceRow)
-            .order_by(WorldInstanceRow.created_at.asc())
-            .all()
-        )
+        rows = self.db.query(WorldInstanceRow).order_by(WorldInstanceRow.created_at.asc()).all()
         return [self._world_response(row) for row in rows]
 
     def build_context(self, payload: ContextRequest) -> ContextResponse:
@@ -259,9 +266,7 @@ class LifeOSService:
 
     def dream_run(self, payload: DreamRunRequest) -> DreamRunResponse:
         engine = self._engine_for_world(payload.world_id)
-        result = engine.ensure_due_dream(
-            dream_date=payload.dream_date, force=payload.force
-        )
+        result = engine.ensure_due_dream(dream_date=payload.dream_date, force=payload.force)
         if result is None:
             latest = engine.latest_dream()
             if latest is None:
@@ -281,17 +286,300 @@ class LifeOSService:
 
     def _engine_for_world(self, world_id: str) -> WorldRuntimeEngine:
         row = self._get_world_row(world_id)
+        self._import_legacy_runtime(row)
         pack_row = self._get_pack_row(row.pack_id)
         pack = AgentPackConfig.model_validate(pack_row.config_json)
         overrides = WorldOverrides.model_validate(row.overrides_json or {})
-        return WorldRuntimeEngine(Path(row.runtime_dir), pack, overrides)
+        return WorldRuntimeEngine(pack=pack, overrides=overrides, db=self.db, world_id=row.world_id)
 
-    def _get_pack_row(self, pack_id: str) -> AgentPackRow:
+    def _import_legacy_runtime(self, row: WorldInstanceRow) -> None:
+        runtime_dir = Path(row.runtime_dir)
+        if not runtime_dir.exists():
+            return
+        self._import_legacy_document(row.world_id, "persona", runtime_dir / "persona.json")
+        self._import_legacy_document(row.world_id, "emotion", runtime_dir / "emotion.json")
+        self._import_legacy_memory(row.world_id, runtime_dir / "memory")
+        self._import_legacy_dreams(row.world_id, runtime_dir / "dreams.json")
+        self._import_legacy_world_sqlite(row.world_id, runtime_dir / "world.sqlite3")
+
+    def _import_legacy_document(self, world_id: str, module: str, path: Path) -> None:
+        source = f"legacy:{module}"
+        if self._migration_done(world_id, source) or not path.exists():
+            return
+        data = self._read_legacy_json(path)
+        if not isinstance(data, dict):
+            self._mark_migration(world_id, source)
+            return
         row = (
-            self.db.query(AgentPackRow)
-            .filter(AgentPackRow.pack_id == pack_id)
+            self.db.query(RuntimeStateDocumentRow)
+            .filter(
+                RuntimeStateDocumentRow.world_id == world_id,
+                RuntimeStateDocumentRow.module == module,
+            )
             .one_or_none()
         )
+        if row is None:
+            self.db.add(
+                RuntimeStateDocumentRow(
+                    world_id=world_id,
+                    module=module,
+                    state_json=data,
+                )
+            )
+        self._mark_migration(world_id, source, commit=False)
+        self.db.commit()
+
+    def _import_legacy_memory(self, world_id: str, memory_dir: Path) -> None:
+        source = "legacy:memory"
+        if self._migration_done(world_id, source) or not memory_dir.exists():
+            return
+        entries = self._read_legacy_json(memory_dir / "entries.json")
+        if isinstance(entries, list):
+            existing_ids = {
+                row.memory_id
+                for row in self.db.query(UserMemoryRow.memory_id)
+                .filter(UserMemoryRow.world_id == world_id)
+                .all()
+            }
+            for entry in entries:
+                if not isinstance(entry, dict) or str(entry.get("id")) in existing_ids:
+                    continue
+                self.db.add(
+                    UserMemoryRow(
+                        world_id=world_id,
+                        memory_id=str(entry.get("id")),
+                        memory_type=str(entry.get("type") or "identity"),
+                        content=str(entry.get("content") or ""),
+                        status=str(entry.get("status") or "active"),
+                        created_at_ms=int(entry.get("createdAt") or 0),
+                        updated_at_ms=int(entry.get("updatedAt") or entry.get("createdAt") or 0),
+                        last_activated_at_ms=entry.get("lastActivatedAt"),
+                        activation_count=int(entry.get("activationCount") or 1),
+                        metadata_json=entry.get("metadata")
+                        if isinstance(entry.get("metadata"), dict)
+                        else {},
+                    )
+                )
+        snapshots_dir = memory_dir / "snapshots"
+        if snapshots_dir.exists():
+            for path in sorted(snapshots_dir.glob("*.json")):
+                snapshot_entries = self._read_legacy_json(path)
+                if not isinstance(snapshot_entries, list):
+                    continue
+                snapshot_id = path.stem
+                if (
+                    self.db.query(MemorySnapshotRow)
+                    .filter(
+                        MemorySnapshotRow.world_id == world_id,
+                        MemorySnapshotRow.snapshot_id == snapshot_id,
+                    )
+                    .one_or_none()
+                ):
+                    continue
+                created_at = _leading_int(snapshot_id)
+                self.db.add(
+                    MemorySnapshotRow(
+                        world_id=world_id,
+                        snapshot_id=snapshot_id,
+                        label=snapshot_id,
+                        entries_json=snapshot_entries,
+                        created_at_ms=created_at,
+                    )
+                )
+        self._mark_migration(world_id, source, commit=False)
+        self.db.commit()
+
+    def _import_legacy_dreams(self, world_id: str, path: Path) -> None:
+        source = "legacy:dreams"
+        if self._migration_done(world_id, source) or not path.exists():
+            return
+        data = self._read_legacy_json(path)
+        if not isinstance(data, dict):
+            self._mark_migration(world_id, source)
+            return
+        for seed in data.get("seeds") or []:
+            if not isinstance(seed, dict):
+                continue
+            self.db.add(
+                DreamSeedRow(
+                    world_id=world_id,
+                    kind=str(seed.get("kind") or "unknown"),
+                    summary=str(seed.get("summary") or ""),
+                    connector_id=seed.get("connector_id"),
+                    source_id=seed.get("source_id"),
+                    created_at_ms=int(seed.get("created_at") or 0),
+                    local_date=str(seed.get("local_date") or ""),
+                )
+            )
+        for dream in data.get("dreams") or []:
+            if not isinstance(dream, dict):
+                continue
+            if (
+                self.db.query(DreamRecordRow)
+                .filter(
+                    DreamRecordRow.world_id == world_id,
+                    DreamRecordRow.dream_date == str(dream.get("dream_date") or ""),
+                )
+                .one_or_none()
+            ):
+                continue
+            self.db.add(
+                DreamRecordRow(
+                    world_id=world_id,
+                    dream_date=str(dream.get("dream_date") or ""),
+                    generated_at_ms=int(dream.get("generated_at") or 0),
+                    timezone=str(dream.get("timezone") or "Asia/Shanghai"),
+                    title=str(dream.get("title") or ""),
+                    fragments_json=list(dream.get("fragments") or []),
+                    emotional_tone=str(dream.get("emotional_tone") or ""),
+                    triggers_json=list(dream.get("triggers") or []),
+                    generation=str(dream.get("generation") or "rules"),
+                    prompt_block=str(dream.get("prompt_block") or ""),
+                )
+            )
+        self._mark_migration(world_id, source, commit=False)
+        self.db.commit()
+
+    def _import_legacy_world_sqlite(self, world_id: str, path: Path) -> None:
+        source = "legacy:world_sqlite"
+        if self._migration_done(world_id, source) or not path.exists():
+            return
+        try:
+            conn = sqlite3.connect(path)
+            conn.row_factory = sqlite3.Row
+        except sqlite3.Error as error:
+            logger.warning("failed to open legacy world sqlite %s: %s", path, error)
+            self._mark_migration(world_id, source)
+            return
+        try:
+            fact_id_map = self._import_legacy_world_facts(world_id, conn)
+            self._import_legacy_fact_events(world_id, conn, fact_id_map)
+            self._import_legacy_clock_events(world_id, conn, fact_id_map)
+            self._import_legacy_venue_visits(world_id, conn)
+        finally:
+            conn.close()
+        self._mark_migration(world_id, source, commit=False)
+        self.db.commit()
+
+    def _import_legacy_world_facts(self, world_id: str, conn: sqlite3.Connection) -> dict[int, int]:
+        fact_id_map: dict[int, int] = {}
+        if not _table_exists(conn, "world_facts"):
+            return fact_id_map
+        rows = conn.execute("SELECT * FROM world_facts ORDER BY id").fetchall()
+        for legacy in rows:
+            row = WorldFactRow(
+                world_id=world_id,
+                category=legacy["category"],
+                subject=legacy["subject"],
+                description=legacy["description"],
+                status=legacy["status"],
+                condition=legacy["condition"],
+                acquired_at=legacy["acquired_at"],
+                acquired_via=legacy["acquired_via"],
+                related_moment_id=legacy["related_moment_id"],
+                real_world_price=legacy["real_world_price"],
+                paid_price=legacy["paid_price"],
+                delivery_at=legacy["delivery_at"],
+                expires_at=legacy["expires_at"],
+                metadata_json=_loads_json_object(legacy["metadata_json"]),
+                created_at=legacy["created_at"],
+                updated_at=legacy["updated_at"],
+            )
+            self.db.add(row)
+            self.db.flush()
+            fact_id_map[int(legacy["id"])] = int(row.id)
+        return fact_id_map
+
+    def _import_legacy_fact_events(
+        self, world_id: str, conn: sqlite3.Connection, fact_id_map: dict[int, int]
+    ) -> None:
+        if not _table_exists(conn, "fact_events"):
+            return
+        for legacy in conn.execute("SELECT * FROM fact_events ORDER BY id").fetchall():
+            legacy_fact_id = legacy["fact_id"]
+            self.db.add(
+                FactEventRow(
+                    world_id=world_id,
+                    fact_id=fact_id_map.get(int(legacy_fact_id)) if legacy_fact_id else None,
+                    event_type=legacy["event_type"],
+                    subject=legacy["subject"],
+                    created_at=legacy["created_at"],
+                    metadata_json=_loads_json_object(legacy["metadata_json"]),
+                )
+            )
+
+    def _import_legacy_clock_events(
+        self, world_id: str, conn: sqlite3.Connection, fact_id_map: dict[int, int]
+    ) -> None:
+        if not _table_exists(conn, "world_pending_events"):
+            return
+        for legacy in conn.execute("SELECT * FROM world_pending_events ORDER BY id").fetchall():
+            legacy_fact_id = legacy["fact_id"]
+            self.db.add(
+                WorldClockEventRow(
+                    world_id=world_id,
+                    type=legacy["type"],
+                    subject=legacy["subject"],
+                    trigger_at=legacy["trigger_at"],
+                    fact_id=fact_id_map.get(int(legacy_fact_id)) if legacy_fact_id else None,
+                    on_trigger=legacy["on_trigger"],
+                    payload_json=_loads_json_object(legacy["payload_json"]),
+                    fired=bool(legacy["fired"]),
+                    created_at=legacy["created_at"],
+                    updated_at=legacy["updated_at"],
+                )
+            )
+
+    def _import_legacy_venue_visits(self, world_id: str, conn: sqlite3.Connection) -> None:
+        if not _table_exists(conn, "venue_visits"):
+            return
+        for legacy in conn.execute("SELECT * FROM venue_visits ORDER BY id").fetchall():
+            self.db.add(
+                VenueVisitRow(
+                    world_id=world_id,
+                    venue_name=legacy["venue_name"],
+                    visited_at=legacy["visited_at"],
+                    spent=legacy["spent"],
+                    rating=legacy["rating"],
+                    note=legacy["note"],
+                    metadata_json=_loads_json_object(legacy["metadata_json"]),
+                )
+            )
+
+    def _read_legacy_json(self, path: Path) -> Any:
+        if not path.exists():
+            return None
+        try:
+            return json.loads(path.read_text("utf-8"))
+        except (OSError, json.JSONDecodeError) as error:
+            logger.warning("failed to import legacy json %s: %s", path, error)
+            return None
+
+    def _migration_done(self, world_id: str, source: str) -> bool:
+        return (
+            self.db.query(RuntimeMigrationRow)
+            .filter(
+                RuntimeMigrationRow.world_id == world_id,
+                RuntimeMigrationRow.source == source,
+            )
+            .one_or_none()
+            is not None
+        )
+
+    def _mark_migration(self, world_id: str, source: str, *, commit: bool = True) -> None:
+        if not self._migration_done(world_id, source):
+            self.db.add(
+                RuntimeMigrationRow(
+                    world_id=world_id,
+                    source=source,
+                    migrated_at=datetime.now(UTC),
+                )
+            )
+        if commit:
+            self.db.commit()
+
+    def _get_pack_row(self, pack_id: str) -> AgentPackRow:
+        row = self.db.query(AgentPackRow).filter(AgentPackRow.pack_id == pack_id).one_or_none()
         if not row:
             raise KeyError(f"pack not found: {pack_id}")
         return row
@@ -382,7 +670,33 @@ class LifeOSService:
     def _invalidate_world_cache(self, world_id: str) -> None:
         if not self._redis:
             return
-        for key in self._redis.scan_iter(
-            match=f"lifeos:context:{world_id}:*", count=100
-        ):
+        for key in self._redis.scan_iter(match=f"lifeos:context:{world_id}:*", count=100):
             self._redis.delete(key)
+
+
+def _loads_json_object(value: str | None) -> dict:
+    if not value:
+        return {}
+    try:
+        parsed = json.loads(value)
+        return parsed if isinstance(parsed, dict) else {}
+    except json.JSONDecodeError:
+        return {}
+
+
+def _table_exists(conn: sqlite3.Connection, table_name: str) -> bool:
+    row = conn.execute(
+        "SELECT name FROM sqlite_master WHERE type = 'table' AND name = ?",
+        (table_name,),
+    ).fetchone()
+    return row is not None
+
+
+def _leading_int(value: str) -> int:
+    digits = []
+    for char in value:
+        if char.isdigit():
+            digits.append(char)
+        else:
+            break
+    return int("".join(digits) or 0)

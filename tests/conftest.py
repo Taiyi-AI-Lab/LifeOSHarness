@@ -20,6 +20,7 @@ def client(tmp_path, monkeypatch):
     data_root = tmp_path / "data"
     monkeypatch.setattr(settings, "lifeos_data_root", data_root)
     monkeypatch.setattr(settings, "redis_url", None)
+    monkeypatch.setattr(settings, "lifeos_intent_classifier", "rules")
     data_root.mkdir(parents=True, exist_ok=True)
     (data_root / "worlds").mkdir(parents=True, exist_ok=True)
 

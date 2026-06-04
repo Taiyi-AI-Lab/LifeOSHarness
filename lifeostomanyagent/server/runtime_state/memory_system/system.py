@@ -8,6 +8,8 @@ import time
 from pathlib import Path
 from typing import Any
 
+from lifeostomanyagent.server.runtime_state.sql_store import SQLRuntimeStore
+
 USER_MEMORY_TYPES = ["identity", "workflow", "voice", "instruction"]
 
 
@@ -45,34 +47,46 @@ def _cosine(left: list[float], right: list[float]) -> float:
 
 
 class UserMemorySystem:
-    def __init__(self, storage_dir: str):
-        self.storage_dir = Path(storage_dir)
-        self.entries_path = self.storage_dir / "entries.json"
-        self.backup_path = self.storage_dir / "entries.json.bak"
-        self.snapshots_dir = self.storage_dir / "snapshots"
-        self.storage_dir.mkdir(parents=True, exist_ok=True)
-        self.snapshots_dir.mkdir(parents=True, exist_ok=True)
+    def __init__(self, storage_dir: str | None = None, *, store: SQLRuntimeStore | None = None):
+        self.store = store
+        self.storage_dir = Path(storage_dir) if storage_dir else None
+        self.entries_path = self.storage_dir / "entries.json" if self.storage_dir else None
+        self.backup_path = self.storage_dir / "entries.json.bak" if self.storage_dir else None
+        self.snapshots_dir = self.storage_dir / "snapshots" if self.storage_dir else None
+        if self.storage_dir and self.snapshots_dir:
+            self.storage_dir.mkdir(parents=True, exist_ok=True)
+            self.snapshots_dir.mkdir(parents=True, exist_ok=True)
         self.entries: list[dict[str, Any]] = self._load_entries()
 
     def _load_entries(self) -> list[dict[str, Any]]:
-        if not self.entries_path.exists():
+        if self.store:
+            return self.store.load_memories()
+        if not self.entries_path or not self.entries_path.exists():
             return []
         try:
             data = json.loads(self.entries_path.read_text("utf-8"))
             return data if isinstance(data, list) else []
         except json.JSONDecodeError:
-            shutil.copyfile(self.entries_path, self.backup_path)
+            if self.backup_path:
+                shutil.copyfile(self.entries_path, self.backup_path)
             return []
 
     def _persist(self) -> None:
+        if self.store:
+            self.store.replace_memories(self.entries)
+            return
+        if not self.entries_path:
+            return
         tmp = self.entries_path.with_suffix(".json.tmp")
         tmp.write_text(json.dumps(self.entries, ensure_ascii=False, indent=2), "utf-8")
         tmp.replace(self.entries_path)
 
     def list_entries(self, include_archived: bool = False) -> list[dict[str, Any]]:
-        entries = self.entries if include_archived else [
-            entry for entry in self.entries if entry.get("status") == "active"
-        ]
+        entries = (
+            self.entries
+            if include_archived
+            else [entry for entry in self.entries if entry.get("status") == "active"]
+        )
         return [dict(entry) for entry in entries]
 
     def get_entry(self, entry_id: str, *, include_archived: bool = False) -> dict[str, Any] | None:
@@ -98,7 +112,10 @@ class UserMemorySystem:
         for entry in self.entries:
             if entry.get("status") != "active" or entry.get("type") != memory_type:
                 continue
-            if entry.get("content") == clean or _similarity(entry.get("content", ""), clean) >= 0.92:
+            if (
+                entry.get("content") == clean
+                or _similarity(entry.get("content", ""), clean) >= 0.92
+            ):
                 entry["activationCount"] = int(entry.get("activationCount", 1)) + 1
                 entry["updatedAt"] = now
                 entry["lastActivatedAt"] = now
@@ -121,7 +138,9 @@ class UserMemorySystem:
         self._persist()
         return dict(entry)
 
-    def search(self, query: str, top_k: int = 5, memory_type: str | None = None) -> list[dict[str, Any]]:
+    def search(
+        self, query: str, top_k: int = 5, memory_type: str | None = None
+    ) -> list[dict[str, Any]]:
         scored = []
         for entry in self.list_entries():
             if memory_type and entry["type"] != memory_type:
@@ -195,7 +214,9 @@ class UserMemorySystem:
         merged = 0
         for entry in sorted(self.entries, key=lambda item: item.get("updatedAt", 0), reverse=True):
             clean = " ".join(str(entry.get("content", "")).split())
-            memory_type = entry.get("type") if entry.get("type") in USER_MEMORY_TYPES else "identity"
+            memory_type = (
+                entry.get("type") if entry.get("type") in USER_MEMORY_TYPES else "identity"
+            )
             if not clean:
                 archived += 1
                 continue
@@ -212,7 +233,9 @@ class UserMemorySystem:
                     "status": entry.get("status") or "active",
                     "updatedAt": entry.get("updatedAt") or now,
                     "activationCount": int(entry.get("activationCount", 1) or 1),
-                    "metadata": entry.get("metadata") if isinstance(entry.get("metadata"), dict) else {},
+                    "metadata": entry.get("metadata")
+                    if isinstance(entry.get("metadata"), dict)
+                    else {},
                 }
             )
         rebuilt.sort(key=lambda item: item.get("createdAt", 0))
@@ -241,7 +264,7 @@ class UserMemorySystem:
 
     def clear_all(self) -> int:
         count = len(self.entries)
-        if count and self.entries_path.exists():
+        if count and self.entries_path and self.entries_path.exists() and self.backup_path:
             shutil.copyfile(self.entries_path, self.backup_path)
         self.entries = []
         self._persist()
@@ -249,20 +272,29 @@ class UserMemorySystem:
 
     def save_snapshot(self, label: str = "snapshot", *, now: int | None = None) -> dict[str, Any]:
         now = now if now is not None else _now()
+        if self.store:
+            return self.store.save_memory_snapshot(label, self.entries, created_at_ms=now)
+        if not self.snapshots_dir:
+            raise ValueError("file-backed memory snapshots require a storage directory")
         safe_label = re.sub(r"[^A-Za-z0-9_.-]+", "-", label).strip("-") or "snapshot"
         path = self.snapshots_dir / f"{now}-{safe_label}.json"
         path.write_text(json.dumps(self.entries, ensure_ascii=False, indent=2), "utf-8")
         return {"label": label, "path": str(path), "createdAt": now, "count": len(self.entries)}
 
     def restore_snapshot(self, path: str) -> int:
-        data = json.loads(Path(path).read_text("utf-8"))
+        if self.store and path.startswith("sql://memory_snapshots/"):
+            data = self.store.load_memory_snapshot(path)
+        else:
+            data = json.loads(Path(path).read_text("utf-8"))
         if not isinstance(data, list):
             raise ValueError("snapshot must contain a list")
         self.entries = data
         self._persist()
         return len(self.entries)
 
-    def extract_from_messages(self, messages: list[dict[str, str]], *, now: int | None = None) -> list[dict[str, Any]]:
+    def extract_from_messages(
+        self, messages: list[dict[str, str]], *, now: int | None = None
+    ) -> list[dict[str, Any]]:
         created = []
         for message in messages:
             if message.get("role") != "user":
@@ -281,9 +313,7 @@ class UserMemorySystem:
         now: int | None = None,
     ) -> dict[str, Any]:
         user_text = "\n".join(
-            message.get("content", "")
-            for message in messages
-            if message.get("role") == "user"
+            message.get("content", "") for message in messages if message.get("role") == "user"
         )
         durable_markers = ["必须", "不要", "以后", "我是", "喜欢", "偏好", "习惯"]
         if not any(marker in user_text for marker in durable_markers):
@@ -304,10 +334,12 @@ class UserMemorySystem:
             if not items:
                 continue
             lines.append(f'<section type="{memory_type}">')
-            for entry in sorted(items, key=lambda item: item["updatedAt"], reverse=True)[:limit_per_type]:
+            for entry in sorted(items, key=lambda item: item["updatedAt"], reverse=True)[
+                :limit_per_type
+            ]:
                 lines.append(
                     f'<item id="{entry["id"]}" activation="{entry["activationCount"]}">'
-                    f'{entry["content"]}</item>'
+                    f"{entry['content']}</item>"
                 )
             lines.append("</section>")
         lines.extend(["</user_memory>", "</user_memory_update>"])

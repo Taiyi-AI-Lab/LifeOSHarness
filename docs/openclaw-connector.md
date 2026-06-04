@@ -15,9 +15,11 @@ LifeOS 服务端启动示例：
 
 ```bash
 cd lifeostomanyagent
-docker compose up -d postgres redis
+docker compose up -d
 uv run uvicorn lifeostomanyagent.server.main:app --reload --port 8000
 ```
+
+默认使用 SQLite（`LIFEOS_DATA_ROOT` 下的 `lifeos.sqlite3`）；PostgreSQL / Redis 仅在需要时通过 compose profile 和环境变量启用。
 
 ## 架构简述
 

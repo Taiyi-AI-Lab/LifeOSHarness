@@ -4,14 +4,16 @@ from collections import defaultdict
 from pathlib import Path
 from typing import Any
 
-from .clock import WorldClock
+from sqlalchemy.orm import Session
+
+from .clock import SQLWorldClock, WorldClock
 from .enrich import FactEnricher
 from .fact_extractor import AliceFactExtractor
 from .models import DAY_MS, current_millis
 from .price import PriceOracle
 from .rules import days_to_millis, validate_action
-from .store import WorldStore
-from .venues import VenueRegistry
+from .store import SQLWorldStore, WorldStore
+from .venues import SQLVenueRegistry, VenueRegistry
 
 # Catalog of WorldEngine debug/introspection actions exposed for tooling.
 # Electron-era transport metadata (preloadMethod / ipc) has been dropped; the
@@ -118,14 +120,28 @@ WORLD_DEBUG_ACTIONS = tuple(spec["action"] for spec in WORLD_DEBUG_ACTION_SPECS)
 
 
 def get_world_debug_action_specs() -> list[dict[str, Any]]:
-    return [{**spec, "paramsExample": dict(spec["paramsExample"])} for spec in WORLD_DEBUG_ACTION_SPECS]
+    return [
+        {**spec, "paramsExample": dict(spec["paramsExample"])} for spec in WORLD_DEBUG_ACTION_SPECS
+    ]
 
 
 class WorldEngine:
-    def __init__(self, db_path: str = "lifeos/world.sqlite3", *, use_llm: bool = False):
-        self.store = WorldStore(db_path)
-        self.clock = WorldClock(self.store)
-        self.venues = VenueRegistry(self.store)
+    def __init__(
+        self,
+        db_path: str = "lifeos/world.sqlite3",
+        *,
+        use_llm: bool = False,
+        db: Session | None = None,
+        world_id: str | None = None,
+    ):
+        if db is not None and world_id is not None:
+            self.store = SQLWorldStore(db, world_id)
+            self.clock = SQLWorldClock(self.store)
+            self.venues = SQLVenueRegistry(self.store)
+        else:
+            self.store = WorldStore(db_path)
+            self.clock = WorldClock(self.store)
+            self.venues = VenueRegistry(self.store)
         self.price_oracle = PriceOracle(use_llm=use_llm)
 
     def init_world_engine(self, now: int | None = None) -> dict[str, Any]:
@@ -179,18 +195,28 @@ class WorldEngine:
             if action == "getUpcomingEvents":
                 return {"ok": True, "data": self.clock.get_upcoming_events(now)}
             if action == "getVisitHistory":
-                return {"ok": True, "data": self.venues.get_visit_history(limit=params.get("limit", 20))}
+                return {
+                    "ok": True,
+                    "data": self.venues.get_visit_history(limit=params.get("limit", 20)),
+                }
             if action == "getFavoriteVenues":
-                return {"ok": True, "data": self.venues.get_favorite_venues(limit=params.get("limit", 10))}
+                return {
+                    "ok": True,
+                    "data": self.venues.get_favorite_venues(limit=params.get("limit", 10)),
+                }
             if action == "getWorldPrompt":
                 return {"ok": True, "data": self.build_world_facts_prompt_block(now=now)}
             if action == "purchase":
                 return {
                     "ok": True,
-                    "data": self.purchase(params, balance=int(params.get("balance", balance)), now=now),
+                    "data": self.purchase(
+                        params, balance=int(params.get("balance", balance)), now=now
+                    ),
                 }
             if action == "queryPrice":
-                price = self.price_oracle.query(params.get("item", ""), params.get("category"), params.get("location"))
+                price = self.price_oracle.query(
+                    params.get("item", ""), params.get("category"), params.get("location")
+                )
                 return {
                     "ok": True,
                     "data": {
@@ -204,12 +230,17 @@ class WorldEngine:
                 extractor = AliceFactExtractor(self.store)
                 llm = params.get("llm")
                 if not callable(llm):
-                    return {"ok": False, "error": "extractFacts requires params.llm callable in the Python replica"}
+                    return {
+                        "ok": False,
+                        "error": "extractFacts requires params.llm callable in the Python replica",
+                    }
                 extracted = extractor.extract_alice_facts(params.get("messages", []), llm)
                 committed = extractor.commit_extracted_facts(extracted) if extracted else 0
                 return {"ok": True, "data": {"extracted": extracted, "committed": committed}}
             if action == "retireFact":
-                fact = self.store.retire_fact(int(params.get("id")), params.get("reason") or "未知原因", now=now)
+                fact = self.store.retire_fact(
+                    int(params.get("id")), params.get("reason") or "未知原因", now=now
+                )
                 if fact is None:
                     return {"ok": False, "error": "事实不存在"}
                 self.store.add_fact_event(
@@ -225,8 +256,14 @@ class WorldEngine:
                 return {"ok": deleted, "error": None if deleted else "事实不存在"}
             if action == "enrichFact":
                 fact_id = int(params.get("factId") or params.get("id"))
-                output_dir = params.get("outputDir") or str(Path(self.store.db_path).parent / "fact-images")
-                result = FactEnricher(self.store, output_dir=output_dir, llm=params.get("llm")).enrich_fact(fact_id, now=now)
+                output_dir = params.get("outputDir") or str(
+                    getattr(
+                        self.store, "asset_dir", Path(self.store.db_path).parent / "fact-images"
+                    )
+                )
+                result = FactEnricher(
+                    self.store, output_dir=output_dir, llm=params.get("llm")
+                ).enrich_fact(fact_id, now=now)
                 return {"ok": "error" not in result, "data": result, "error": result.get("error")}
             if action == "addFact":
                 fact = self.store.add_fact(
@@ -260,10 +297,15 @@ class WorldEngine:
             if action == "getFactEvents":
                 return {
                     "ok": True,
-                    "data": self.store.get_fact_events(int(params.get("factId")), int(params.get("limit", 50))),
+                    "data": self.store.get_fact_events(
+                        int(params.get("factId")), int(params.get("limit", 50))
+                    ),
                 }
             if action == "getRecentEvents":
-                return {"ok": True, "data": self.store.get_recent_events(limit=int(params.get("limit", 20)))}
+                return {
+                    "ok": True,
+                    "data": self.store.get_recent_events(limit=int(params.get("limit", 20))),
+                }
             if action == "worldTick":
                 return {"ok": True, "data": self.world_tick(now=now)}
             if action == "initWorldEngine":
@@ -380,15 +422,22 @@ class WorldEngine:
 
         total_cost = 0
         for activity in activities:
-            title = activity.get("title") or activity.get("name") or activity.get("description") or ""
+            title = (
+                activity.get("title") or activity.get("name") or activity.get("description") or ""
+            )
             if not title:
                 continue
             if "estimatedCost" not in activity and "cost" not in activity:
                 continue
             raw_cost = int(activity.get("estimatedCost", activity.get("cost", 0)) or 0)
-            price = self.price_oracle.query(title, activity.get("category"), activity.get("location"))
+            price = self.price_oracle.query(
+                title, activity.get("category"), activity.get("location")
+            )
             total_cost += price.estimated_price
-            if raw_cost == 0 or abs(raw_cost - price.estimated_price) / max(price.estimated_price, 1) > 0.5:
+            if (
+                raw_cost == 0
+                or abs(raw_cost - price.estimated_price) / max(price.estimated_price, 1) > 0.5
+            ):
                 result["priceCorrections"].append(
                     {
                         "activity": title,
@@ -446,9 +495,7 @@ class WorldEngine:
         if favorite_venues:
             lines.append("\n## favorite venues")
             for venue in favorite_venues:
-                lines.append(
-                    f"- {venue['venueName']}：访问 {venue['metadata']['visitCount']} 次"
-                )
+                lines.append(f"- {venue['venueName']}：访问 {venue['metadata']['visitCount']} 次")
 
         return "\n".join(lines)
 
@@ -469,7 +516,9 @@ class WorldEngine:
                 continue
             days = max(0, int((delivery_at - now + DAY_MS - 1) // DAY_MS))
             if days in {1, 2, 3}:
-                result["factInjections"].append(f"{fact['subject']} 即将送达，预计 {days} 天内交付。")
+                result["factInjections"].append(
+                    f"{fact['subject']} 即将送达，预计 {days} 天内交付。"
+                )
 
 
 def _format_age(delta_ms: int) -> str:

@@ -5,6 +5,8 @@ import time
 from pathlib import Path
 from typing import Any
 
+from lifeostomanyagent.server.runtime_state.sql_store import SQLRuntimeStore
+
 DEFAULT_STATE = {
     "mood": 60,
     "energy": 65,
@@ -24,14 +26,18 @@ def _clamp(value: int | float, low: int = 0, high: int = 100) -> int:
 
 
 class AliceEmotionSystem:
-    def __init__(self, file_path: str):
-        self.file_path = Path(file_path)
-        self.file_path.parent.mkdir(parents=True, exist_ok=True)
+    def __init__(self, file_path: str | None = None, *, store: SQLRuntimeStore | None = None):
+        self.store = store
+        self.file_path = Path(file_path) if file_path else None
+        if self.file_path:
+            self.file_path.parent.mkdir(parents=True, exist_ok=True)
         self.state = {**DEFAULT_STATE, **self._load()}
         self._persist()
 
     def _load(self) -> dict[str, Any]:
-        if not self.file_path.exists():
+        if self.store:
+            return self.store.load_document("emotion") or {}
+        if not self.file_path or not self.file_path.exists():
             return {}
         try:
             data = json.loads(self.file_path.read_text("utf-8"))
@@ -40,9 +46,16 @@ class AliceEmotionSystem:
             return {}
 
     def _persist(self) -> None:
+        if self.store:
+            self.store.save_document("emotion", self.state)
+            return
+        if not self.file_path:
+            return
         self.file_path.write_text(json.dumps(self.state, ensure_ascii=False, indent=2), "utf-8")
 
-    def apply_event(self, event_type: str, *, now: int | None = None, **payload: Any) -> dict[str, Any]:
+    def apply_event(
+        self, event_type: str, *, now: int | None = None, **payload: Any
+    ) -> dict[str, Any]:
         now = now if now is not None else _now()
         if event_type == "chat_started":
             self.state["loneliness"] = _clamp(self.state["loneliness"] - 8)

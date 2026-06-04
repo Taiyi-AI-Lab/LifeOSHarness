@@ -49,14 +49,18 @@ class FactEnricher:
         image_url = None
         image_input = self.build_image_prompt(fact, metadata)
         try:
-            image_url = self.image_generator(image_input["category"], image_input["prompt"], str(self.output_dir))
+            image_url = self.image_generator(
+                image_input["category"], image_input["prompt"], str(self.output_dir)
+            )
         except Exception:
             image_url = None
 
         if ai_description:
             metadata["aiDescription"] = ai_description
             i18n = metadata.get("i18n") if isinstance(metadata.get("i18n"), dict) else {}
-            description = i18n.get("description") if isinstance(i18n.get("description"), dict) else {}
+            description = (
+                i18n.get("description") if isinstance(i18n.get("description"), dict) else {}
+            )
             description.setdefault(self.language, ai_description)
             i18n["description"] = description
             metadata["i18n"] = i18n
@@ -84,6 +88,9 @@ class FactEnricher:
         return {"imageUrl": image_url, "aiDescription": ai_description}
 
     def _update_fact_metadata(self, fact_id: int, metadata: dict[str, Any], now: int) -> None:
+        if hasattr(self.store, "update_fact_metadata"):
+            self.store.update_fact_metadata(fact_id, metadata, now)
+            return
         import json
 
         self.store.conn.execute(

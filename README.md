@@ -23,7 +23,7 @@ flowchart TD
     Client["Agent client<br/>Claude Code / Codex / pi / Hermes / OpenClaw"] --> Connector["Connector hook or plugin"]
     Connector --> API["FastAPI Runtime API"]
     API --> Service["LifeOSService"]
-    Service --> DB["Postgres<br/>packs / worlds / sessions"]
+    Service --> DB["SQLAlchemy DB<br/>SQLite default / PostgreSQL optional"]
     Service --> Engine["WorldRuntimeEngine"]
     Engine --> State["runtime_state<br/>persona / emotion / memory / world facts / dreams"]
     Engine --> Composer["PromptComposer"]
@@ -35,20 +35,19 @@ flowchart TD
 
 - **Agent Pack**: a structured character template with identity, behavior profile, behavior trajectory, world rules, and enabled runtime modules.
 - **World Instance**: a live world created from a Pack. Each world owns separate persona, emotion, memory, world facts, and dreams state.
-- **Runtime State**: embedded local state systems backed by files and SQLite, with no external private checkout required.
+- **Runtime State**: embedded local state systems backed by the configured SQL database, with no external private checkout required.
 - **Prompt Composer**: assembles connector-aware system context by budget and priority.
 - **Connector**: injects LifeOS context into Claude Code, Codex, pi, Hermes, OpenClaw, and other agent runtimes.
 
 ## 5-Minute Quickstart
 
-### 1. Start Dependencies
+### 1. Prepare Local Config
 
 ```bash
 cp .env.example .env
-docker compose up -d postgres redis
 ```
 
-`.env.example` uses development defaults. Change `LIFEOS_API_KEY` before exposing the API beyond local development. See [SECURITY.md](SECURITY.md).
+SQLite is the default core store at `{LIFEOS_DATA_ROOT}/lifeos.sqlite3`, so no database service is required for local use. Change `LIFEOS_API_KEY` before exposing the API beyond local development. See [SECURITY.md](SECURITY.md).
 
 ### 2. Install Dependencies And Start The API
 
@@ -57,7 +56,7 @@ uv sync
 uv run uvicorn lifeostomanyagent.server.main:app --reload --port 8000
 ```
 
-You can also build and run the API container:
+You can also build and run the API container. It stores SQLite data in the `lifeos_data` volume by default:
 
 ```bash
 docker compose build api
@@ -133,7 +132,7 @@ uv run pytest
 ## Documentation
 
 - [docs/architecture.md](docs/architecture.md): architecture, request flow, and design boundaries.
-- [docs/database.md](docs/database.md): Postgres tables, JSON fields, and runtime file layout.
+- [docs/database.md](docs/database.md): SQLite/PostgreSQL storage, SQL tables, JSON fields, and legacy runtime import.
 - [docs/api/lifeos-platform.md](docs/api/lifeos-platform.md): platform API overview.
 - [docs/modern-agent-pack-template.md](docs/modern-agent-pack-template.md): modern character Agent Pack template.
 - [docs/pi-connector.md](docs/pi-connector.md): pi agent install, verify, and uninstall guide.
@@ -144,7 +143,7 @@ uv run pytest
 
 ## Security
 
-Default configuration is for local development. Read [SECURITY.md](SECURITY.md) before exposing the service, change `LIFEOS_API_KEY`, and keep the API on trusted networks. SECURITY.md includes a **Pre-Release / Deployment Checklist** (rotate the API key, avoid public `0.0.0.0` exposure, change the Compose Postgres/Redis dev defaults, keep secrets out of git). The hardcoded `dev-lifeos-key-change-me` is a development fallback only — never use it on a shared or public network.
+Default configuration is for local development. Read [SECURITY.md](SECURITY.md) before exposing the service, change `LIFEOS_API_KEY`, and keep the API on trusted networks. SECURITY.md includes a **Pre-Release / Deployment Checklist** (rotate the API key, avoid public `0.0.0.0` exposure, configure PostgreSQL/Redis securely if you enable them, keep secrets out of git). The hardcoded `dev-lifeos-key-change-me` is a development fallback only — never use it on a shared or public network.
 
 ## License
 
