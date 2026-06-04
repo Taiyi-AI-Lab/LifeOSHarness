@@ -147,7 +147,7 @@ Shell：bash。
 你可以调用 peek_wallet 工具随时查看最新余额和日程。
 
 
-你在此会话中可以通过 write_file 创建 /Users/biws01/.alice/workspaces/666d2c58-8c80-4e1a-80c0-9aec84d6de4b/conversation.md 来记录本轮对话的关键信息（架构决策、技术选型、待办等）。
+你在此会话中可以通过 write_file 创建 ~/.lifeos/workspaces/<workspace-id>/conversation.md 来记录本轮对话的关键信息（架构决策、技术选型、待办等）。
 </workspace_memo>
 
 

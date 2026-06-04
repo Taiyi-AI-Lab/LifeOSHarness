@@ -6,7 +6,12 @@ from pathlib import Path
 
 import httpx
 
-from lifeostomanyagent.domain.models import ContextRequest, ContextResponse, WorldCreateRequest, WorldResponse
+from lifeostomanyagent.domain.models import (
+    ContextRequest,
+    ContextResponse,
+    WorldCreateRequest,
+    WorldResponse,
+)
 
 
 @dataclass
@@ -55,7 +60,7 @@ class LifeOSClient:
     def close(self) -> None:
         self._client.close()
 
-    def __enter__(self) -> "LifeOSClient":
+    def __enter__(self) -> LifeOSClient:
         return self
 
     def __exit__(self, *args: object) -> None:

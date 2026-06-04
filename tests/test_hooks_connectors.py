@@ -3,8 +3,6 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
-import pytest
-
 from lifeostomanyagent.connectors.claude_code import install_claude_code_hooks
 from lifeostomanyagent.connectors.codex import install_codex_hooks
 from lifeostomanyagent.connectors.hooks_base import (

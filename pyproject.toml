@@ -39,8 +39,25 @@ packages = ["lifeostomanyagent"]
 pythonpath = ["."]
 testpaths = ["tests"]
 
+[tool.ruff]
+target-version = "py311"
+line-length = 100
+extend-exclude = ["data", ".venv"]
+
+[tool.ruff.lint]
+# Pragmatic defaults: pyflakes, pycodestyle errors/warnings, isort, pyupgrade,
+# and flake8-bugbear. Keep the set modest so CI catches real issues without
+# forcing unrelated style churn.
+select = ["E", "F", "W", "I", "UP", "B"]
+ignore = [
+    "E501",  # line length is handled by the formatter, not enforced as a hard error
+    "B008",  # FastAPI/Typer rely on function calls in argument defaults
+    "B905",  # zip(..., strict=) can be adopted separately where behavior matters
+]
+
 [dependency-groups]
 dev = [
     "pytest>=8.3.0",
     "pytest-asyncio>=0.24.0",
+    "ruff>=0.8.0",
 ]

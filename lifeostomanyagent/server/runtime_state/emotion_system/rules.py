@@ -2,7 +2,6 @@ from __future__ import annotations
 
 from typing import Any
 
-
 HOUR_MS = 3_600_000
 DAY_MS = 86_400_000
 WAKE_RESET_MS = 43_200_000

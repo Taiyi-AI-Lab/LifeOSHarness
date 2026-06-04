@@ -8,8 +8,7 @@ from lifeostomanyagent.config import settings
 from lifeostomanyagent.server.api.packs import router as packs_router
 from lifeostomanyagent.server.api.runtime import router as runtime_router
 from lifeostomanyagent.server.api.worlds import router as worlds_router
-from lifeostomanyagent.server.db.models import init_db
-from lifeostomanyagent.server.db.models import get_db
+from lifeostomanyagent.server.db.models import get_db, init_db
 from lifeostomanyagent.server.services import LifeOSService
 
 

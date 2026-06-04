@@ -3,13 +3,8 @@ from __future__ import annotations
 from fastapi import APIRouter, Depends, HTTPException
 
 from lifeostomanyagent.domain.models import (
-    ContextRequest,
-    ContextResponse,
     PackCreateRequest,
     PackResponse,
-    SessionEventRequest,
-    WorldCreateRequest,
-    WorldResponse,
 )
 from lifeostomanyagent.server.auth import require_api_key
 from lifeostomanyagent.server.deps import get_service

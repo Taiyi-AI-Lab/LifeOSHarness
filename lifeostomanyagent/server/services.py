@@ -3,6 +3,7 @@ from __future__ import annotations
 import hashlib
 import json
 import uuid
+from datetime import UTC
 from pathlib import Path
 
 import redis
@@ -197,7 +198,7 @@ class LifeOSService:
         return response
 
     def session_start(self, payload: SessionEventRequest) -> dict:
-        from datetime import datetime, timezone
+        from datetime import datetime
 
         engine = self._engine_for_world(payload.world_id)
         state = engine.on_chat_started(
@@ -207,7 +208,7 @@ class LifeOSService:
             world_id=payload.world_id,
             connector_id=payload.connector_id,
             session_id=payload.session_id,
-            started_at=datetime.now(timezone.utc),
+            started_at=datetime.now(UTC),
         )
         self.db.add(row)
         self.db.commit()
@@ -215,7 +216,7 @@ class LifeOSService:
         return {"ok": True, "emotion": state}
 
     def session_end(self, payload: SessionEventRequest) -> dict:
-        from datetime import datetime, timezone
+        from datetime import datetime
 
         engine = self._engine_for_world(payload.world_id)
         state = engine.on_chat_ended(
@@ -233,7 +234,7 @@ class LifeOSService:
             .first()
         )
         if record and record.ended_at is None:
-            record.ended_at = datetime.now(timezone.utc)
+            record.ended_at = datetime.now(UTC)
             self.db.commit()
         self._invalidate_world_cache(payload.world_id)
         return {"ok": True, "emotion": state}

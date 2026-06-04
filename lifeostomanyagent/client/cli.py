@@ -264,7 +264,7 @@ def connector_install(
 
         settings = Path(claude_settings) if claude_settings else None
         result = install_claude_code_hooks(settings_path=settings, symlink=symlink)
-        console.print(f"[green]已安装 Claude Code hooks[/green]")
+        console.print("[green]已安装 Claude Code hooks[/green]")
         console.print(f"  settings: {result.settings_path}")
         console.print(f"  hook:     {result.hook_script}")
         console.print("下一步：lifeos login && lifeos world-create，然后启动 claude")
@@ -275,7 +275,7 @@ def connector_install(
 
         home = Path(codex_home) if codex_home else None
         result = install_codex_hooks(codex_home=home, symlink=symlink)
-        console.print(f"[green]已安装 Codex hooks[/green]")
+        console.print("[green]已安装 Codex hooks[/green]")
         console.print(f"  hooks.json:  {result.hooks_path}")
         console.print(f"  config.toml: {result.config_path}")
         console.print(f"  hook:        {result.hook_script}")
@@ -287,7 +287,7 @@ def connector_install(
 
         plugins_dir = Path(hermes_plugins_dir) if hermes_plugins_dir else None
         result = install_hermes_plugin(plugins_dir=plugins_dir, symlink=symlink)
-        console.print(f"[green]已安装 Hermes plugin[/green]")
+        console.print("[green]已安装 Hermes plugin[/green]")
         console.print(f"  plugin: {result.plugin_dir}")
         console.print("下一步：lifeos login && lifeos world-create，然后启动 hermes")
         return
@@ -297,7 +297,7 @@ def connector_install(
 
         ext_dir = Path(openclaw_extensions_dir) if openclaw_extensions_dir else None
         result = install_openclaw_plugin(extensions_dir=ext_dir, symlink=symlink)
-        console.print(f"[green]已安装 OpenClaw plugin[/green]")
+        console.print("[green]已安装 OpenClaw plugin[/green]")
         console.print(f"  plugin: {result.plugin_dir}")
         console.print("下一步：lifeos login && lifeos world-create")
         console.print("        openclaw plugins enable lifeos")

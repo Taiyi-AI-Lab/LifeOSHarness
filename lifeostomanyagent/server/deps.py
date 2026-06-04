@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from collections.abc import Generator
 
-from lifeostomanyagent.server.db.models import SessionLocal, get_db
+from lifeostomanyagent.server.db.models import get_db
 from lifeostomanyagent.server.services import LifeOSService
 
 

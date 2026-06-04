@@ -5,7 +5,6 @@ import time
 from pathlib import Path
 from typing import Any
 
-
 DEFAULT_STATE = {
     "mood": 58,
     "energy": 62,

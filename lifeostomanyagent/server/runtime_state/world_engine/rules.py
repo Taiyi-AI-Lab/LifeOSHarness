@@ -5,7 +5,6 @@ from typing import Any
 
 from .models import DAY_MS, ValidationResult, ValidationViolation
 
-
 DELIVERY_RANGES = {
     "vehicle": (3, 30),
     "digital": (1, 3),

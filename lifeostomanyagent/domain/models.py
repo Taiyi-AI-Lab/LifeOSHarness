@@ -57,7 +57,7 @@ class AgentPackConfig(BaseModel):
     base_system_prompt: str | None = None  # legacy fallback during migration
 
     @model_validator(mode="after")
-    def _require_identity_or_legacy_prompt(self) -> "AgentPackConfig":
+    def _require_identity_or_legacy_prompt(self) -> AgentPackConfig:
         if self.identity is None and not (self.base_system_prompt or "").strip():
             raise ValueError("pack requires identity or base_system_prompt")
         return self
@@ -131,7 +131,7 @@ class PackCreateRequest(BaseModel):
     base_system_prompt: str | None = None  # legacy
 
     @model_validator(mode="after")
-    def _require_identity_or_legacy_prompt(self) -> "PackCreateRequest":
+    def _require_identity_or_legacy_prompt(self) -> PackCreateRequest:
         if self.identity is None and not (self.base_system_prompt or "").strip():
             raise ValueError("pack requires identity or base_system_prompt")
         return self

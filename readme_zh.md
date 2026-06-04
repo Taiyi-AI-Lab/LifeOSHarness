@@ -2,6 +2,8 @@
 
 English version: [README.md](README.md)
 
+> **仓库定位：** 本仓库是 **LifeOS Platform 后端平台** —— 一个基于 Python/FastAPI 的 Agent World Runtime，外加各类 Connector 与 CLI/SDK。**Alice 桌面客户端**（Electron 伴侣应用）属于更大的产品愿景与 roadmap，其代码**不包含**在本仓库中。本仓库的所有内容都作为无界面、自托管的后端服务运行。
+
 LifeOS Platform 是一个 local-first、自托管的 Agent World Runtime，用来构建更有温度、更有连续性的 Agent。它给 Agent 一个持久身份、记忆、情绪状态、生活背景、梦境和可跨多个 Agent 客户端共享的世界。
 
 LifeOS 的目标是让 Agent 更有温度。温度不是多说几句亲切话，而是它能记得关系、承接情绪、理解生活背景、保留共同经历，并且在不同工具里仍然像同一个持续存在的伙伴。Claude Code、Codex、pi、Hermes、OpenClaw 等不同运行时都可以通过 Connector 拉取同一个 World 的上下文。
@@ -142,7 +144,7 @@ uv run pytest
 
 ## 安全
 
-默认配置面向本地开发。公开部署前请阅读 [SECURITY.md](SECURITY.md)，至少修改 `LIFEOS_API_KEY`，并只把服务暴露给可信网络。
+默认配置面向本地开发。公开部署前请阅读 [SECURITY.md](SECURITY.md)，至少修改 `LIFEOS_API_KEY`，并只把服务暴露给可信网络。SECURITY.md 中提供了一份**发布/部署前检查清单**（轮换 API Key、不要对公网暴露 `0.0.0.0`、修改 Compose 中 Postgres/Redis 的开发默认密码、把密钥排除在 git 之外）。硬编码的 `dev-lifeos-key-change-me` 仅作为开发期 fallback —— 切勿在共享或公网环境中使用。
 
 ## License
 

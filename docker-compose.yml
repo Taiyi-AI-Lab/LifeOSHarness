@@ -1,8 +1,11 @@
+# Development-only stack. The credentials and keys below are insecure defaults
+# meant for local use. See SECURITY.md before deploying outside your machine.
 services:
   postgres:
     image: postgres:16-alpine
     environment:
       POSTGRES_USER: lifeos
+      # Dev-only password. Change this (and DATABASE_URL) for any shared deployment.
       POSTGRES_PASSWORD: lifeos
       POSTGRES_DB: lifeos
     ports:
@@ -22,6 +25,7 @@ services:
     environment:
       DATABASE_URL: postgresql+psycopg://lifeos:lifeos@postgres:5432/lifeos
       REDIS_URL: redis://redis:6379/0
+      # Dev-only API key. MUST be replaced with a strong secret before exposure.
       LIFEOS_API_KEY: dev-lifeos-key-change-me
       LIFEOS_DATA_ROOT: /data
     ports:

@@ -3,7 +3,8 @@ from __future__ import annotations
 import json
 import re
 import time
-from typing import Any, Callable, Iterable
+from collections.abc import Callable, Iterable
+from typing import Any
 
 from .prompts_world import WorldPrompts
 from .store import WorldStore

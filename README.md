@@ -2,6 +2,8 @@
 
 Chinese version: [readme_zh.md](readme_zh.md)
 
+> **Repository scope:** This repository is the **LifeOS Platform backend** — a Python/FastAPI Agent World Runtime plus its connectors and CLI/SDK. The **Alice desktop client** (an Electron companion app) is part of the larger product vision and roadmap, but its code is **not** included here. Everything in this repo runs as a headless, self-hosted backend service.
+
 LifeOS Platform is a local-first, self-hosted Agent World Runtime for warmer, more continuous agents. It gives an agent a durable identity, memory, emotional state, life context, dreams, and a shared world that can follow the user across multiple agent clients.
 
 LifeOS is built around a simple idea: warmth is architecture. A warmer agent is not just friendlier in tone. It remembers relationships, carries emotional continuity, understands life context, keeps shared experiences, and remains recognizably the same companion across different tools. Claude Code, Codex, pi, Hermes, OpenClaw, and other runtimes can all pull context from the same LifeOS World through connectors.
@@ -142,7 +144,7 @@ uv run pytest
 
 ## Security
 
-Default configuration is for local development. Read [SECURITY.md](SECURITY.md) before exposing the service, change `LIFEOS_API_KEY`, and keep the API on trusted networks.
+Default configuration is for local development. Read [SECURITY.md](SECURITY.md) before exposing the service, change `LIFEOS_API_KEY`, and keep the API on trusted networks. SECURITY.md includes a **Pre-Release / Deployment Checklist** (rotate the API key, avoid public `0.0.0.0` exposure, change the Compose Postgres/Redis dev defaults, keep secrets out of git). The hardcoded `dev-lifeos-key-change-me` is a development fallback only — never use it on a shared or public network.
 
 ## License
 

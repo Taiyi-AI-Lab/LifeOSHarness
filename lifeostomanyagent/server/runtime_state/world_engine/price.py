@@ -9,7 +9,6 @@ from typing import Any
 from .models import PriceResult
 from .prompts_world import WorldPrompts
 
-
 PRICE_BASELINES: dict[str, tuple[int, tuple[int, int]]] = {
     "breakfast_home": (15, (8, 30)),
     "lunch_casual": (35, (20, 60)),
