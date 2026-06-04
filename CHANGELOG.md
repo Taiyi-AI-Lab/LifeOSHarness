@@ -18,6 +18,10 @@ The format is based on Keep a Changelog, and this project follows Semantic Versi
 - Added the first LifeOS Web Console implementation under `web/`.
 - Added a read-only `/inspector/worlds/{world_id}/state` API for console runtime state inspection.
 - Added a Nanzhi Agent Pack document based on searched public materials from Dear You / 《给阿嬷的情书》.
+- Added a Shurou Agent Pack document based on searched public materials from Dear You / 《给阿嬷的情书》.
+- Added a GitHub-friendly Agent Pack overview table for Alice, Musheng, Nanzhi, and Shurou.
+- Added character tables to the English and Chinese README files.
+- Added a `media/` folder for future image and video assets.
 - Added a reusable `lifeos-agent-pack-builder` skill under `skills/` for open-source Agent Pack creation and import workflows.
 - Added a professional guide for creating and importing new LifeOS characters.
 
