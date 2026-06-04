@@ -14,6 +14,10 @@ The format is based on Keep a Changelog, and this project follows Semantic Versi
 - Added community and contribution files: `AGENTS.md`, `CONTRIBUTING.md`, and `CODE_OF_CONDUCT.md`.
 - Added backend-only repository scope notes and a security deployment checklist.
 - Added public roadmap sections to the English and Chinese README files.
+- Added a `web/` frontend workspace placeholder for the future LifeOS Web Console.
+- Added the first LifeOS Web Console implementation under `web/`.
+- Added a read-only `/inspector/worlds/{world_id}/state` API for console runtime state inspection.
+- Added a Nanzhi Agent Pack document based on searched public materials from Dear You / 《给阿嬷的情书》.
 
 ### Changed
 

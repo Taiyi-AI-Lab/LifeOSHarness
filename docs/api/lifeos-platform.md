@@ -152,6 +152,28 @@ Extension 安装到 `~/.pi/agent/extensions/lifeos.ts`，通过 `before_agent_st
 
 外部 Connector（`hermes` / `claude-code` / `codex` / `openclaw`）默认 **不含** pi/Alice 工具说明（OOXML、novel_write、Skills 列表等）；这些在 [`server/overlays/pi_tools.md`](../../lifeostomanyagent/server/overlays/pi_tools.md)，仅 `connector_id=pi` 时注入。
 
+## Inspector API
+
+Web Console 使用只读 Inspector API 查看一个 World 的聚合运行时状态：
+
+```http
+GET /inspector/worlds/{world_id}/state?limit=100
+```
+
+该接口需要 `X-API-Key`，不修改 runtime state。`limit` 默认 100，最大 500。
+
+响应包含：
+
+- `world`：WorldInstance 基础信息。
+- `pack`：关联 Agent Pack。
+- `persona`：`runtime_state_documents` 中 `persona` 模块的 JSON，缺失时为 `null`。
+- `emotion`：`runtime_state_documents` 中 `emotion` 模块的 JSON，缺失时为 `null`。
+- `memories`：用户记忆列表，按更新时间倒序。
+- `dreams`：dream seeds 与 dream records。
+- `world_facts`：active/all facts、fact events、clock events、venue visits。
+
+World 不存在时返回 404。
+
 ## 自定义 Pack（结构化）
 
 `POST /packs` 推荐使用结构化字段，无需 40KB markdown：

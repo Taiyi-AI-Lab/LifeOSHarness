@@ -119,6 +119,18 @@ uv run lifeos connector install openclaw      # docs/openclaw-connector.md
 
 Connector installers modify local configuration files for their target agent clients. See each connector document for installation, verification, and uninstall steps.
 
+### 6. Optional: Start The Web Console
+
+The web console lives in `web/` and connects to the FastAPI server through a Vite proxy.
+
+```bash
+cd web
+npm install
+npm run dev
+```
+
+Open `http://127.0.0.1:5173` and use the same `X-API-Key` configured for the backend.
+
 ## API Overview
 
 All write endpoints require the `X-API-Key` header.
@@ -135,6 +147,7 @@ All write endpoints require the `X-API-Key` header.
 | POST | `/runtime/session/start` | Record a session start event |
 | POST | `/runtime/session/end` | Record a session end event |
 | POST | `/runtime/dreams/run` | Generate dreams manually |
+| GET | `/inspector/worlds/{world_id}/state` | Inspect aggregated runtime state for the web console |
 
 See [docs/api/lifeos-platform.md](docs/api/lifeos-platform.md) for the full API overview.
 
@@ -143,6 +156,7 @@ See [docs/api/lifeos-platform.md](docs/api/lifeos-platform.md) for the full API 
 - `lifeostomanyagent/server/`: FastAPI API, WorldRuntimeEngine, and PromptComposer.
 - `lifeostomanyagent/server/runtime_state/`: embedded persona, emotion, memory, and world facts state systems.
 - `lifeostomanyagent/client/`: Python SDK and `lifeos` CLI.
+- `web/`: frontend workspace for the future LifeOS Web Console.
 - `connectors/templates/`: Claude Code and Codex hook templates.
 - `connectors/hermes/`: Hermes Python plugin.
 - `connectors/openclaw/`: OpenClaw TypeScript plugin.

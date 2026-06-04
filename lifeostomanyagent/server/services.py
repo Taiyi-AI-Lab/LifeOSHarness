@@ -10,6 +10,7 @@ from pathlib import Path
 from typing import Any
 
 import redis
+from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from lifeostomanyagent.config import settings
@@ -53,6 +54,8 @@ from lifeostomanyagent.server.engine.intent_classifier import (
 )
 from lifeostomanyagent.server.engine.runtime import WorldRuntimeEngine
 from lifeostomanyagent.server.presets.alice import build_alice_pack_config
+from lifeostomanyagent.server.runtime_state.sql_store import SQLRuntimeStore
+from lifeostomanyagent.server.runtime_state.world_engine.store import SQLWorldStore
 
 logger = logging.getLogger(__name__)
 
@@ -153,6 +156,29 @@ class LifeOSService:
     def list_worlds(self) -> list[WorldResponse]:
         rows = self.db.query(WorldInstanceRow).order_by(WorldInstanceRow.created_at.asc()).all()
         return [self._world_response(row) for row in rows]
+
+    def inspect_world_state(self, world_id: str, *, limit: int = 100) -> dict[str, Any]:
+        limit = max(1, min(limit, 500))
+        world = self.get_world(world_id)
+        pack = self.get_pack(world.pack_id)
+        runtime_store = SQLRuntimeStore(self.db, world_id)
+        world_store = SQLWorldStore(self.db, world_id)
+
+        return {
+            "world": world.model_dump(),
+            "pack": pack.model_dump(),
+            "persona": runtime_store.load_document("persona"),
+            "emotion": runtime_store.load_document("emotion"),
+            "memories": self._inspect_memories(world_id, limit),
+            "dreams": runtime_store.load_dream_state(),
+            "world_facts": {
+                "active": world_store.get_active_facts()[:limit],
+                "all": world_store.get_all_facts()[:limit],
+                "fact_events": self._inspect_fact_events(world_id, limit),
+                "clock_events": self._inspect_clock_events(world_id, limit),
+                "venue_visits": self._inspect_venue_visits(world_id, limit),
+            },
+        }
 
     def build_context(self, payload: ContextRequest) -> ContextResponse:
         intent = self._classify_context_intent(payload)
@@ -283,6 +309,90 @@ class LifeOSService:
     def dream_latest(self, world_id: str) -> DreamLatestResponse:
         engine = self._engine_for_world(world_id)
         return DreamLatestResponse(world_id=world_id, dream=engine.latest_dream())
+
+    def _inspect_memories(self, world_id: str, limit: int) -> list[dict[str, Any]]:
+        rows = self.db.scalars(
+            select(UserMemoryRow)
+            .where(UserMemoryRow.world_id == world_id)
+            .order_by(UserMemoryRow.updated_at_ms.desc(), UserMemoryRow.memory_id.asc())
+            .limit(limit)
+        ).all()
+        return [
+            {
+                "id": row.memory_id,
+                "type": row.memory_type,
+                "content": row.content,
+                "status": row.status,
+                "createdAt": row.created_at_ms,
+                "updatedAt": row.updated_at_ms,
+                "lastActivatedAt": row.last_activated_at_ms,
+                "activationCount": row.activation_count,
+                "metadata": dict(row.metadata_json or {}),
+            }
+            for row in rows
+        ]
+
+    def _inspect_fact_events(self, world_id: str, limit: int) -> list[dict[str, Any]]:
+        rows = self.db.scalars(
+            select(FactEventRow)
+            .where(FactEventRow.world_id == world_id)
+            .order_by(FactEventRow.created_at.desc(), FactEventRow.id.desc())
+            .limit(limit)
+        ).all()
+        return [
+            {
+                "id": row.id,
+                "factId": row.fact_id,
+                "eventType": row.event_type,
+                "subject": row.subject,
+                "createdAt": row.created_at,
+                "metadata": dict(row.metadata_json or {}),
+            }
+            for row in rows
+        ]
+
+    def _inspect_clock_events(self, world_id: str, limit: int) -> list[dict[str, Any]]:
+        rows = self.db.scalars(
+            select(WorldClockEventRow)
+            .where(WorldClockEventRow.world_id == world_id)
+            .order_by(WorldClockEventRow.trigger_at.desc(), WorldClockEventRow.id.desc())
+            .limit(limit)
+        ).all()
+        return [
+            {
+                "id": row.id,
+                "type": row.type,
+                "subject": row.subject,
+                "triggerAt": row.trigger_at,
+                "factId": row.fact_id,
+                "onTrigger": row.on_trigger,
+                "payload": dict(row.payload_json or {}),
+                "fired": row.fired,
+                "createdAt": row.created_at,
+                "updatedAt": row.updated_at,
+            }
+            for row in rows
+        ]
+
+    def _inspect_venue_visits(self, world_id: str, limit: int) -> list[dict[str, Any]]:
+        rows = self.db.scalars(
+            select(VenueVisitRow)
+            .where(VenueVisitRow.world_id == world_id)
+            .order_by(VenueVisitRow.visited_at.desc(), VenueVisitRow.id.desc())
+            .limit(limit)
+        ).all()
+        return [
+            {
+                "id": row.id,
+                "venueName": row.venue_name,
+                "visitedAt": row.visited_at,
+                "spent": row.spent,
+                "rating": row.rating,
+                "note": row.note,
+                "metadata": dict(row.metadata_json or {}),
+            }
+            for row in rows
+        ]
 
     def _engine_for_world(self, world_id: str) -> WorldRuntimeEngine:
         row = self._get_world_row(world_id)
