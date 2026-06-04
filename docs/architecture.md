@@ -16,7 +16,7 @@ flowchart TD
     Client["Agent client<br/>Claude Code / Codex / pi / Hermes / OpenClaw"] --> Connector["Connector hook or plugin"]
     Connector --> API["FastAPI Runtime API"]
     API --> Service["LifeOSService"]
-    Service --> DB["Postgres<br/>packs / worlds / sessions"]
+    Service --> DB["SQLAlchemy DB<br/>SQLite default / PostgreSQL optional"]
     Service --> Engine["WorldRuntimeEngine"]
     Engine --> State["runtime_state<br/>persona / emotion / memory / world facts / dreams"]
     Engine --> Composer["PromptComposer"]
@@ -40,7 +40,7 @@ Legacy `base_system_prompt` remains supported for migration, but new packs shoul
 
 ### World Instance
 
-A World Instance is a live copy of a Pack. Multiple worlds can share the same Pack but keep separate runtime state. Metadata lives in Postgres; state lives under `LIFEOS_DATA_ROOT/worlds/{world_id}/`.
+A World Instance is a live copy of a Pack. Multiple worlds can share the same Pack but keep separate runtime state. Pack metadata and runtime state live in the same SQLAlchemy database: SQLite by default, or PostgreSQL when `DATABASE_URL` points to Postgres.
 
 ### Runtime State
 
@@ -49,7 +49,7 @@ The embedded `lifeostomanyagent/server/runtime_state/` package contains the mini
 - `persona_system`: relationship, mood-like persona state, interests, journal.
 - `emotion_system`: emotion variables and behavior constraints.
 - `memory_system`: user memory entries and prompt block rendering.
-- `world_engine`: SQLite-backed world facts, events, purchases, venues.
+- `world_engine`: SQL-backed world facts, events, purchases, venues.
 - `dreams`: LifeOS-native dream seed collection and dream prompt block generation.
 
 The runtime state package is copied into this repository and does not require an external private checkout.
@@ -58,8 +58,8 @@ The runtime state package is copied into this repository and does not require an
 
 1. A connector receives a user prompt or session event.
 2. The connector calls LifeOS API with `world_id`, `connector_id`, `session_id`, and user message.
-3. `LifeOSService` loads the world metadata and Pack from Postgres.
-4. `WorldRuntimeEngine` opens the world runtime directory and reads enabled state modules.
+3. `LifeOSService` loads the world metadata and Pack from the configured SQL database.
+4. `WorldRuntimeEngine` reads enabled state modules from SQL-backed runtime stores.
 5. `LifeOSService` resolves the interaction intent. By default, deterministic rules only allow clear chitchat / companionship turns to receive LifeOS context; task-like or unknown input returns an empty context. `LIFEOS_INTENT_CLASSIFIER=llm` enables DeepSeek-based intent classification with rule fallback.
 6. For chitchat turns, `PromptComposer` renders ordered context blocks and applies the connector budget.
 7. The connector injects the returned `system` block only when `injected=true`.

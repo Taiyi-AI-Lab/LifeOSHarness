@@ -8,6 +8,8 @@ from pathlib import Path
 from typing import Any
 from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
+from lifeostomanyagent.server.runtime_state.sql_store import SQLRuntimeStore
+
 MAX_SEEDS = 300
 MAX_DREAMS = 60
 MAX_SUMMARY_CHARS = 140
@@ -29,13 +31,16 @@ class DreamEngine:
 
     def __init__(
         self,
-        file_path: Path,
+        file_path: Path | None = None,
         *,
         timezone_name: str = "Asia/Shanghai",
         llm_generator: Callable[[dict[str, Any]], dict[str, Any] | None] | None = None,
+        store: SQLRuntimeStore | None = None,
     ):
+        self.store = store
         self.file_path = file_path
-        self.file_path.parent.mkdir(parents=True, exist_ok=True)
+        if self.file_path:
+            self.file_path.parent.mkdir(parents=True, exist_ok=True)
         self.timezone_name = timezone_name or "Asia/Shanghai"
         self.llm_generator = llm_generator
         try:
@@ -46,7 +51,9 @@ class DreamEngine:
         self.state = self._load()
         self._persist()
 
-    def record_interaction_seed(self, connector_id: str, user_message: str, *, now_ms: int | None = None) -> dict[str, Any]:
+    def record_interaction_seed(
+        self, connector_id: str, user_message: str, *, now_ms: int | None = None
+    ) -> dict[str, Any]:
         return self.record_seed(
             kind="user_interaction",
             summary=user_message,
@@ -118,7 +125,9 @@ class DreamEngine:
             return {"created": False, "dream": existing}
         dream = self._build_dream(target_date, now_ms=now_ms)
         if existing:
-            self.state["dreams"] = [item for item in self.state["dreams"] if item.get("dream_date") != target_date]
+            self.state["dreams"] = [
+                item for item in self.state["dreams"] if item.get("dream_date") != target_date
+            ]
         self.state["dreams"].append(dream)
         self.state["dreams"] = self.state["dreams"][-MAX_DREAMS:]
         self._persist()
@@ -283,7 +292,9 @@ class DreamEngine:
         return None
 
     def _load(self) -> dict[str, Any]:
-        if not self.file_path.exists():
+        if self.store:
+            return self.store.load_dream_state()
+        if not self.file_path or not self.file_path.exists():
             return {"seeds": [], "dreams": []}
         try:
             data = json.loads(self.file_path.read_text("utf-8"))
@@ -297,4 +308,9 @@ class DreamEngine:
         }
 
     def _persist(self) -> None:
+        if self.store:
+            self.store.replace_dream_state(self.state)
+            return
+        if not self.file_path:
+            return
         self.file_path.write_text(json.dumps(self.state, ensure_ascii=False, indent=2), "utf-8")

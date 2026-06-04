@@ -23,7 +23,7 @@ flowchart TD
     Client["Agent client<br/>Claude Code / Codex / pi / Hermes / OpenClaw"] --> Connector["Connector hook or plugin"]
     Connector --> API["FastAPI Runtime API"]
     API --> Service["LifeOSService"]
-    Service --> DB["Postgres<br/>packs / worlds / sessions"]
+    Service --> DB["SQLAlchemy DB<br/>默认 SQLite / 可选 PostgreSQL"]
     Service --> Engine["WorldRuntimeEngine"]
     Engine --> State["runtime_state<br/>persona / emotion / memory / world facts / dreams"]
     Engine --> Composer["PromptComposer"]
@@ -35,20 +35,19 @@ flowchart TD
 
 - **Agent Pack**：结构化人物模板，包含身份、行为画像、行为轨迹、世界规则和启用的 runtime 模块。
 - **World Instance**：基于 Pack 创建的独立世界，每个 world 有自己的 persona、emotion、memory、world facts 和 dreams 状态。
-- **Runtime State**：仓库内嵌的状态子系统，负责读写本地文件和 SQLite，不依赖外部私有目录。
+- **Runtime State**：仓库内嵌的状态子系统，读写当前配置的 SQL 数据库，不依赖外部私有目录。
 - **Prompt Composer**：按 connector、预算和优先级组装 system context。
 - **Connector**：把 LifeOS context 注入到 Claude Code、Codex、pi、Hermes、OpenClaw 等 agent runtime。
 
 ## 5 分钟 Quickstart
 
-### 1. 启动依赖
+### 1. 准备本地配置
 
 ```bash
 cp .env.example .env
-docker compose up -d postgres redis
 ```
 
-`.env.example` 使用开发默认值。公开部署或联网使用前，请修改 `LIFEOS_API_KEY`，详见 [SECURITY.md](SECURITY.md)。
+核心存储默认使用 `{LIFEOS_DATA_ROOT}/lifeos.sqlite3`，本地使用不需要额外数据库服务。公开部署或联网使用前，请修改 `LIFEOS_API_KEY`，详见 [SECURITY.md](SECURITY.md)。
 
 ### 2. 安装依赖并启动 API
 
@@ -57,7 +56,7 @@ uv sync
 uv run uvicorn lifeostomanyagent.server.main:app --reload --port 8000
 ```
 
-也可以直接构建 API 镜像：
+也可以直接构建 API 镜像；默认会把 SQLite 数据保存在 `lifeos_data` volume 中：
 
 ```bash
 docker compose build api
@@ -133,7 +132,7 @@ uv run pytest
 ## 文档
 
 - [docs/architecture.md](docs/architecture.md)：架构、数据流和设计边界。
-- [docs/database.md](docs/database.md)：Postgres 表结构、JSON 字段、运行时文件布局。
+- [docs/database.md](docs/database.md)：SQLite/PostgreSQL 存储、SQL 表结构、JSON 字段和旧 runtime 导入。
 - [docs/api/lifeos-platform.md](docs/api/lifeos-platform.md)：平台 API 总览。
 - [docs/modern-agent-pack-template.md](docs/modern-agent-pack-template.md)：现代人物 Agent Pack 双层生成模板。
 - [docs/pi-connector.md](docs/pi-connector.md)：pi agent 安装 / 验证 / 卸载。
@@ -144,7 +143,7 @@ uv run pytest
 
 ## 安全
 
-默认配置面向本地开发。公开部署前请阅读 [SECURITY.md](SECURITY.md)，至少修改 `LIFEOS_API_KEY`，并只把服务暴露给可信网络。SECURITY.md 中提供了一份**发布/部署前检查清单**（轮换 API Key、不要对公网暴露 `0.0.0.0`、修改 Compose 中 Postgres/Redis 的开发默认密码、把密钥排除在 git 之外）。硬编码的 `dev-lifeos-key-change-me` 仅作为开发期 fallback —— 切勿在共享或公网环境中使用。
+默认配置面向本地开发。公开部署前请阅读 [SECURITY.md](SECURITY.md)，至少修改 `LIFEOS_API_KEY`，并只把服务暴露给可信网络。SECURITY.md 中提供了一份**发布/部署前检查清单**（轮换 API Key、不要对公网暴露 `0.0.0.0`、如启用 PostgreSQL/Redis 需使用安全配置、把密钥排除在 git 之外）。硬编码的 `dev-lifeos-key-change-me` 仅作为开发期 fallback —— 切勿在共享或公网环境中使用。
 
 ## License
 

@@ -4,6 +4,8 @@ import time
 from pathlib import Path
 from typing import Any
 
+from sqlalchemy.orm import Session
+
 from lifeostomanyagent.config import settings
 from lifeostomanyagent.domain.models import AgentPackConfig, WorldOverrides
 from lifeostomanyagent.server.engine.dream_llm import DeepSeekDreamLLM
@@ -12,6 +14,7 @@ from lifeostomanyagent.server.engine.prompt_composer import PromptComposer
 from lifeostomanyagent.server.runtime_state.emotion_system.system import AliceEmotionSystem
 from lifeostomanyagent.server.runtime_state.memory_system.system import UserMemorySystem
 from lifeostomanyagent.server.runtime_state.persona_system.system import AlicePersonaSystem
+from lifeostomanyagent.server.runtime_state.sql_store import SQLRuntimeStore
 from lifeostomanyagent.server.runtime_state.world_engine.engine import WorldEngine
 
 
@@ -22,22 +25,66 @@ def _now_ms() -> int:
 class WorldRuntimeEngine:
     """Assembles dynamic agent context from pack config and embedded runtime state subsystems."""
 
-    def __init__(self, world_root: Path, pack: AgentPackConfig, overrides: WorldOverrides | None = None):
+    def __init__(
+        self,
+        world_root: Path | None = None,
+        pack: AgentPackConfig | None = None,
+        overrides: WorldOverrides | None = None,
+        *,
+        db: Session | None = None,
+        world_id: str | None = None,
+    ):
+        if pack is None:
+            raise ValueError("pack is required")
         self.world_root = world_root
         self.pack = pack
         self.overrides = overrides or WorldOverrides()
-        world_root.mkdir(parents=True, exist_ok=True)
+        self.sql_store = (
+            SQLRuntimeStore(db, world_id) if db is not None and world_id is not None else None
+        )
+        if world_root:
+            world_root.mkdir(parents=True, exist_ok=True)
 
         modules = pack.runtime_modules
-        self.memory = UserMemorySystem(str(world_root / "memory")) if modules.memory else None
-        self.persona = AlicePersonaSystem(str(world_root / "persona.json")) if modules.persona else None
-        self.emotion = AliceEmotionSystem(str(world_root / "emotion.json")) if modules.emotion else None
-        self.world = WorldEngine(str(world_root / "world.sqlite3")) if modules.world_facts else None
+        self.memory = (
+            UserMemorySystem(
+                str(world_root / "memory") if world_root else None,
+                store=self.sql_store,
+            )
+            if modules.memory
+            else None
+        )
+        self.persona = (
+            AlicePersonaSystem(
+                str(world_root / "persona.json") if world_root else None,
+                store=self.sql_store,
+            )
+            if modules.persona
+            else None
+        )
+        self.emotion = (
+            AliceEmotionSystem(
+                str(world_root / "emotion.json") if world_root else None,
+                store=self.sql_store,
+            )
+            if modules.emotion
+            else None
+        )
+        self.world = (
+            WorldEngine(
+                str(world_root / "world.sqlite3") if world_root else "lifeos/world.sqlite3",
+                db=db,
+                world_id=world_id,
+            )
+            if modules.world_facts
+            else None
+        )
         self.dreams = (
             DreamEngine(
-                world_root / "dreams.json",
+                world_root / "dreams.json" if world_root else None,
                 timezone_name=pack.world_rules.timezone,
                 llm_generator=self._dream_llm_generator(),
+                store=self.sql_store,
             )
             if modules.dreams
             else None
@@ -61,7 +108,9 @@ class WorldRuntimeEngine:
         now: int | None = None,
     ) -> dict[str, Any] | None:
         if self.dreams:
-            self.dreams.record_session_seed(connector_id, "start", session_id=session_id, now_ms=now)
+            self.dreams.record_session_seed(
+                connector_id, "start", session_id=session_id, now_ms=now
+            )
         if not self.emotion:
             return None
         return self.emotion.apply_event("chat_started", now=now)
@@ -131,7 +180,9 @@ class WorldRuntimeEngine:
             return None
         return self.dreams.latest_dream()
 
-    def record_interaction_seed(self, connector_id: str, user_message: str, *, now: int | None = None) -> dict[str, Any] | None:
+    def record_interaction_seed(
+        self, connector_id: str, user_message: str, *, now: int | None = None
+    ) -> dict[str, Any] | None:
         if not self.dreams:
             return None
         return self.dreams.record_interaction_seed(connector_id, user_message, now_ms=now)
@@ -157,7 +208,9 @@ class WorldRuntimeEngine:
                     f"情绪状态：mood={state.get('mood')} energy={state.get('energy')} "
                     f"loneliness={state.get('loneliness')} stress={state.get('stress')}"
                 )
-                self.dreams.record_seed(kind="emotion_state", summary=summary, source_id=f"emotion:{now}", now_ms=now)
+                self.dreams.record_seed(
+                    kind="emotion_state", summary=summary, source_id=f"emotion:{now}", now_ms=now
+                )
         if self.world:
             try:
                 events = self.world.store.get_recent_events(limit=10)

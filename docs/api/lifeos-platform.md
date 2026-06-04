@@ -4,7 +4,7 @@ LifeOS 将「Agent 世界」（人设、行为轨迹、世界规则、运行时 
 
 ## 架构
 
-- **Server**：FastAPI + Postgres（Pack/World 元数据）+ 文件系统（每 world 运行时状态）+ Redis（context 短缓存，可选）
+- **Server**：FastAPI + SQLAlchemy 核心存储（默认 SQLite，可选 PostgreSQL）+ Redis（context 短缓存，可选）
 - **Client**：`lifeos` CLI / Python SDK
 - **Alice**：示例 preset `POST /packs/presets/alice`
 
@@ -198,10 +198,10 @@ Hook 模板见 [`connectors/templates/`](../../connectors/templates/)。
 
 | 变量 | 说明 |
 |------|------|
-| `DATABASE_URL` | Postgres 连接串 |
-| `REDIS_URL` | Redis（可选） |
+| `DATABASE_URL` | SQLAlchemy 连接串；默认 `{LIFEOS_DATA_ROOT}/lifeos.sqlite3`，可设置为 PostgreSQL |
+| `REDIS_URL` | Redis context 短缓存（可选；未配置时不影响核心功能） |
 | `LIFEOS_API_KEY` | API Key |
-| `LIFEOS_DATA_ROOT` | 世界运行时数据目录 |
+| `LIFEOS_DATA_ROOT` | SQLite 默认位置、旧 runtime 文件迁移来源和非核心产物目录 |
 
 数据库表结构与 JSON 字段说明见 [`docs/database.md`](../database.md)。
 

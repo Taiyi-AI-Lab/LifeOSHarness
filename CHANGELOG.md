@@ -8,6 +8,7 @@ The format is based on Keep a Changelog, and this project follows Semantic Versi
 
 ### Added
 
+- Added SQLite-first unified SQL storage for core runtime state, with optional PostgreSQL via `DATABASE_URL` and automatic import of legacy runtime files.
 - Added an intent gate for `/runtime/context`: LifeOS context is injected only for clear chitchat / companionship turns by default.
 - Added optional DeepSeek-based intent classification via `LIFEOS_INTENT_CLASSIFIER=llm`, with deterministic rule fallback.
 - Added community and contribution files: `AGENTS.md`, `CONTRIBUTING.md`, and `CODE_OF_CONDUCT.md`.
@@ -15,6 +16,7 @@ The format is based on Keep a Changelog, and this project follows Semantic Versi
 
 ### Changed
 
+- Changed Docker Compose to start the API with SQLite by default; PostgreSQL and Redis are now optional profiles.
 - Updated connectors to start and finish LifeOS turns only when context was actually injected.
 - Replaced machine-specific paths and removed dead Electron IPC metadata from backend world debug specs.
 
