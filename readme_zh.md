@@ -37,6 +37,19 @@ flowchart TD
 - **Prompt Composer**：按 connector、预算和优先级组装 system context。
 - **Connector**：把 LifeOS context 注入到 Claude Code、Codex、pi、Hermes、OpenClaw 等 agent runtime。
 
+## 人物角色
+
+当前仓库中的人物角色：
+
+| 人物 | Pack ID | 类型 | 来源 / 原型 | 现代身份定位 | Runtime 模块 | 定义 |
+|------|---------|------|-------------|--------------|---------------|------|
+| Alice | `alice` | 内置 preset | LifeOS 示例角色 | 26 岁远程协作伙伴，强调共情、边界和可靠执行 | persona、emotion、memory、world_facts、proactive | [alice.py](lifeostomanyagent/server/presets/alice.py) |
+| 木生 | `musheng` | 自定义 Agent Pack | 《给阿嬷的情书》中的郑木生 | 32 岁，现居深圳南山的社区档案与华侨文化项目顾问 | persona、emotion、memory、world_facts、proactive、dreams | [musheng.md](docs/agent-packs/musheng.md) |
+| 南枝 | `nanzhi` | 自定义 Agent Pack | 《给阿嬷的情书》中的谢南枝 | 29 岁，现居广州越秀的华文教育与侨批记忆项目策划人 | persona、emotion、memory、world_facts、proactive、dreams | [nanzhi.md](docs/agent-packs/nanzhi.md) |
+| 淑柔 | `shurou` | 自定义 Agent Pack | 《给阿嬷的情书》中的叶淑柔 | 34 岁，现居汕头小公园片区的社区家庭支持与侨批记忆项目协调人 | persona、emotion、memory、world_facts、proactive、dreams | [shurou.md](docs/agent-packs/shurou.md) |
+
+更完整的人物总览见 [docs/agent-packs/README.md](docs/agent-packs/README.md)，创建新人物流程见 [docs/create-new-character.md](docs/create-new-character.md)。
+
 ## Roadmap
 
 LifeOS Platform 已经开源，后续会优先把 runtime 做到可见、可编辑、可安全运行，再逐步扩展到更丰富的多 Agent 世界。
@@ -157,6 +170,7 @@ npm run dev
 - `lifeostomanyagent/server/runtime_state/`：内嵌 persona / emotion / memory / world facts 状态子系统。
 - `lifeostomanyagent/client/`：Python SDK 与 `lifeos` CLI。
 - `web/`：未来 LifeOS Web Console 的前端工作区。
+- `media/`：仓库媒体目录，用于存放文档、演示和人物素材需要的图片与视频。
 - `connectors/templates/`：Claude Code / Codex hook 模板。
 - `connectors/hermes/`：Hermes Python Plugin。
 - `connectors/openclaw/`：OpenClaw TypeScript Plugin。

@@ -37,6 +37,19 @@ flowchart TD
 - **Prompt Composer**: assembles connector-aware system context by budget and priority.
 - **Connector**: injects LifeOS context into Claude Code, Codex, pi, Hermes, OpenClaw, and other agent runtimes.
 
+## Character Packs
+
+Current repository character packs:
+
+| Character | Pack ID | Type | Source / Prototype | Modern LifeOS Identity | Runtime Modules | Definition |
+|-----------|---------|------|--------------------|------------------------|-----------------|------------|
+| Alice | `alice` | Built-in preset | LifeOS example character | 26-year-old remote collaboration companion shaped around empathy, boundaries, and reliable execution | persona, emotion, memory, world_facts, proactive | [alice.py](lifeostomanyagent/server/presets/alice.py) |
+| 木生 | `musheng` | Custom Agent Pack | Zheng Musheng from Dear You / 《给阿嬷的情书》 | 32-year-old Shenzhen-based community archive and overseas Chinese culture project consultant | persona, emotion, memory, world_facts, proactive, dreams | [musheng.md](docs/agent-packs/musheng.md) |
+| 南枝 | `nanzhi` | Custom Agent Pack | Xie Nanzhi from Dear You / 《给阿嬷的情书》 | 29-year-old Guangzhou-based Chinese education and Qiaopi memory project planner | persona, emotion, memory, world_facts, proactive, dreams | [nanzhi.md](docs/agent-packs/nanzhi.md) |
+| 淑柔 | `shurou` | Custom Agent Pack | Ye Shurou from Dear You / 《给阿嬷的情书》 | 34-year-old Shantou-based community family support and Qiaopi memory project coordinator | persona, emotion, memory, world_facts, proactive, dreams | [shurou.md](docs/agent-packs/shurou.md) |
+
+See [docs/agent-packs/README.md](docs/agent-packs/README.md) for a fuller character overview, and [docs/create-new-character.md](docs/create-new-character.md) for the repeatable creation workflow.
+
 ## Roadmap
 
 LifeOS Platform is open source and evolving in public. The current priority is to make the runtime visible, editable, and safe to operate before expanding into richer multi-agent worlds.
@@ -157,6 +170,7 @@ See [docs/api/lifeos-platform.md](docs/api/lifeos-platform.md) for the full API 
 - `lifeostomanyagent/server/runtime_state/`: embedded persona, emotion, memory, and world facts state systems.
 - `lifeostomanyagent/client/`: Python SDK and `lifeos` CLI.
 - `web/`: frontend workspace for the future LifeOS Web Console.
+- `media/`: repository media folder for images and videos used by docs, demos, and character assets.
 - `connectors/templates/`: Claude Code and Codex hook templates.
 - `connectors/hermes/`: Hermes Python plugin.
 - `connectors/openclaw/`: OpenClaw TypeScript plugin.
