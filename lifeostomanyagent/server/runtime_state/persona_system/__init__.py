@@ -1,3 +1,3 @@
-from .system import AlicePersonaSystem
+from .system import PersonaSystem
 
-__all__ = ["AlicePersonaSystem"]
+__all__ = ["PersonaSystem"]

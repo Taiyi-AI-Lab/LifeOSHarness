@@ -8,11 +8,11 @@ API_HEADERS = {"X-API-Key": "dev-lifeos-key-change-me"}
 
 
 def _create_world(client) -> str:
-    client.post("/packs/presets/alice", headers=API_HEADERS)
+    client.post("/packs/presets/chenyuan", headers=API_HEADERS)
     response = client.post(
         "/worlds",
         headers=API_HEADERS,
-        json={"pack_id": "alice", "display_name": "Inspector Alice"},
+        json={"pack_id": "chenyuan", "display_name": "Inspector陈远"},
     )
     assert response.status_code == 200
     return response.json()["world_id"]
@@ -38,7 +38,7 @@ def test_inspector_state_returns_empty_runtime_sections_for_new_world(client):
     assert response.status_code == 200
     body = response.json()
     assert body["world"]["world_id"] == world_id
-    assert body["pack"]["pack_id"] == "alice"
+    assert body["pack"]["pack_id"] == "chenyuan"
     assert body["persona"] is None
     assert body["emotion"] is None
     assert body["memories"] == []

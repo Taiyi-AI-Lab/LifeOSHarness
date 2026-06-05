@@ -25,7 +25,7 @@ def _clamp(value: int | float, low: int = 0, high: int = 100) -> int:
     return max(low, min(high, int(value)))
 
 
-class AliceEmotionSystem:
+class EmotionSystem:
     def __init__(self, file_path: str | None = None, *, store: SQLRuntimeStore | None = None):
         self.store = store
         self.file_path = Path(file_path) if file_path else None
@@ -106,8 +106,8 @@ class AliceEmotionSystem:
     def build_emotion_prompt_block(self) -> str:
         constraints = self.get_behavior_constraints()
         lines = [
-            "<alice_emotion>",
-            "# Alice Emotion",
+            "<agent_emotion>",
+            "# Agent Emotion",
             f"- mood: {self.state['mood']} ({_label(self.state['mood'])})",
             f"- energy: {self.state['energy']}",
             f"- loneliness: {self.state['loneliness']}",
@@ -117,7 +117,7 @@ class AliceEmotionSystem:
         ]
         for key, enabled in constraints.items():
             lines.append(f"- {key}: {str(enabled).lower()}")
-        lines.append("</alice_emotion>")
+        lines.append("</agent_emotion>")
         return "\n".join(lines)
 
 

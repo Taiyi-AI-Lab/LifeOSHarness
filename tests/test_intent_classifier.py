@@ -12,7 +12,7 @@ from lifeostomanyagent.server.engine.intent_classifier import (
 
 
 def test_rules_classify_clear_chitchat():
-    result = classify_intent_rules("Alice，今天有点累，陪我聊聊")
+    result = classify_intent_rules("陈远，今天有点累，陪我聊聊")
 
     assert result.resolved_intent == "chitchat"
     assert result.classifier == "rules"

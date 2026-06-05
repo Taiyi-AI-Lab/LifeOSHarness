@@ -1,6 +1,6 @@
 # Codex × LifeOS 安装与卸载
 
-本文说明如何在 [OpenAI Codex](https://developers.openai.com/codex) CLI 中接入 LifeOS（Alice 世界状态、人设、情绪、记忆），以及如何验证、停用与卸载。
+本文说明如何在 [OpenAI Codex](https://developers.openai.com/codex) CLI 中接入 LifeOS（陈远世界状态、人设、情绪、记忆），以及如何验证、停用与卸载。
 
 Codex 与 Claude Code 使用**同一套** LifeOS hook 脚本与事件模型，仅配置文件与 `connector_id` 不同。Claude Code 侧说明见 [`claude-code-connector.md`](claude-code-connector.md)。
 
@@ -60,7 +60,7 @@ Hook 模板：[`connectors/templates/lifeos_hook.py`](../connectors/templates/li
 ```bash
 cd lifeostomanyagent
 uv run lifeos login --server http://127.0.0.1:8000 --api-key <你的 API Key>
-uv run lifeos world-create --pack alice --name "我的 Alice"
+uv run lifeos world-create --pack chenyuan --name "我的陈远"
 ```
 
 确认 `~/.lifeos/config.json` 含 `server_url`、`api_key`、`default_world_id`。
@@ -137,7 +137,7 @@ curl -s http://127.0.0.1:8000/health
 uv run lifeos context "你好，测试一下" --connector codex
 ```
 
-输出应含 Alice 人设相关片段。
+输出应含 陈远人设相关片段。
 
 ### 层 2：确认配置文件
 
@@ -171,7 +171,7 @@ echo '{"session_id":"hook-test-1","prompt":"你好"}' | \
 
 1. 确认 LifeOS API 在跑、`config.json` 正确、`hooks = true`
 2. 启动 `codex`，发送例如：「你是谁？你现在在哪里？」
-3. 若回答体现 Alice 人设，则注入成功
+3. 若回答体现 陈远人设，则注入成功
 
 ### 常见问题
 

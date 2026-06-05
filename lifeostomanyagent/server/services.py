@@ -53,7 +53,7 @@ from lifeostomanyagent.server.engine.intent_classifier import (
     classify_intent,
 )
 from lifeostomanyagent.server.engine.runtime import WorldRuntimeEngine
-from lifeostomanyagent.server.presets.alice import build_alice_pack_config
+from lifeostomanyagent.server.presets.chenyuan import build_chenyuan_pack_config
 from lifeostomanyagent.server.runtime_state.sql_store import SQLRuntimeStore
 from lifeostomanyagent.server.runtime_state.world_engine.store import SQLWorldStore
 
@@ -71,19 +71,21 @@ class LifeOSService:
             except redis.RedisError:
                 self._redis = None
 
-    def ensure_alice_preset(self) -> PackResponse:
-        config_json = build_alice_pack_config()
-        existing = self.db.query(AgentPackRow).filter(AgentPackRow.pack_id == "alice").one_or_none()
+    def ensure_chenyuan_preset(self) -> PackResponse:
+        config_json = build_chenyuan_pack_config()
+        existing = (
+            self.db.query(AgentPackRow).filter(AgentPackRow.pack_id == "chenyuan").one_or_none()
+        )
         if existing:
             existing.config_json = config_json
-            existing.display_name = "Alice"
+            existing.display_name = "陈远"
             self.db.commit()
             self.db.refresh(existing)
             return self._pack_response(existing)
         row = AgentPackRow(
             id=str(uuid.uuid4()),
-            pack_id="alice",
-            display_name="Alice",
+            pack_id="chenyuan",
+            display_name="陈远",
             config_json=config_json,
             is_preset=True,
         )

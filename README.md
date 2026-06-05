@@ -6,7 +6,7 @@ LifeOS Platform is a local-first, self-hosted Agent World Runtime for warmer, mo
 
 LifeOS is built around a simple idea: warmth is architecture. A warmer agent is not just friendlier in tone. It remembers relationships, carries emotional continuity, understands life context, keeps shared experiences, and remains recognizably the same companion across different tools. Claude Code, Codex, pi, Hermes, OpenClaw, and other runtimes can all pull context from the same LifeOS World through connectors.
 
-Alice is the built-in example preset that demonstrates structured Agent Packs. You can create your own Pack with `POST /packs`.
+陈远 is the built-in example preset that demonstrates structured Agent Packs. He is a 35-year-old 2035 UBI citizen shaped by automation displacement, dignity, and the search for meaning. You can create your own Pack with `POST /packs`.
 
 ## Innovation
 
@@ -43,7 +43,7 @@ Current repository character packs:
 
 | Character | Pack ID | Type | Source / Prototype | Modern LifeOS Identity | Runtime Modules | Definition |
 |-----------|---------|------|--------------------|------------------------|-----------------|------------|
-| Alice | `alice` | Built-in preset | LifeOS example character | 26-year-old remote collaboration companion shaped around empathy, boundaries, and reliable execution | persona, emotion, memory, world_facts, proactive | [alice.py](lifeostomanyagent/server/presets/alice.py) |
+| 陈远 | `chenyuan` | Built-in preset | 《2035》 protagonist-inspired LifeOS character | 35-year-old 2035 UBI citizen, former programmer, displaced by automation and shaped by dignity, robot rights, and the search for meaning | persona, emotion, memory, world_facts, proactive | [chenyuan.py](lifeostomanyagent/server/presets/chenyuan.py) |
 | 木生 | `musheng` | Custom Agent Pack | Zheng Musheng from Dear You / 《给阿嬷的情书》 | 32-year-old Shenzhen-based community archive and overseas Chinese culture project consultant | persona, emotion, memory, world_facts, proactive, dreams | [musheng.md](docs/agent-packs/musheng.md) |
 | 南枝 | `nanzhi` | Custom Agent Pack | Xie Nanzhi from Dear You / 《给阿嬷的情书》 | 29-year-old Guangzhou-based Chinese education and Qiaopi memory project planner | persona, emotion, memory, world_facts, proactive, dreams | [nanzhi.md](docs/agent-packs/nanzhi.md) |
 | 淑柔 | `shurou` | Custom Agent Pack | Ye Shurou from Dear You / 《给阿嬷的情书》 | 34-year-old Shantou-based community family support and Qiaopi memory project coordinator | persona, emotion, memory, world_facts, proactive, dreams | [shurou.md](docs/agent-packs/shurou.md) |
@@ -106,7 +106,7 @@ docker compose up -d api
 
 ```bash
 uv run lifeos login --server http://127.0.0.1:8000 --api-key dev-lifeos-key-change-me
-uv run lifeos world-create --pack alice --name "My Alice"
+uv run lifeos world-create --pack chenyuan --name "My Chen Yuan"
 uv run lifeos context "hello" --connector claude-code
 ```
 
@@ -151,7 +151,7 @@ All write endpoints require the `X-API-Key` header.
 | Method | Path | Description |
 |------|------|------|
 | GET | `/health` | Health check |
-| POST | `/packs/presets/alice` | Install or refresh the Alice example preset |
+| POST | `/packs/presets/chenyuan` | Install or refresh the 陈远 example preset |
 | POST | `/packs` | Create a custom Agent Pack |
 | GET | `/packs` | List Agent Packs |
 | POST | `/worlds` | Create a World Instance |

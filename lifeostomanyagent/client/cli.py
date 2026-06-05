@@ -26,7 +26,9 @@ def _world_id(explicit: str | None) -> str:
     config = ConfigStore().load()
     world_id = explicit or config.default_world_id
     if not world_id:
-        raise typer.BadParameter("missing world id; pass --world or run `lifeos world create` and `lifeos login --world-id ...`")
+        raise typer.BadParameter(
+            "missing world id; pass --world or run `lifeos world create` and `lifeos login --world-id ...`"
+        )
     return world_id
 
 
@@ -49,10 +51,16 @@ def _select_world(
         matches = [world for world in matches if world.display_name == display_name]
 
     if not matches:
-        raise typer.BadParameter("matched 0 worlds; run `lifeos world-list` to inspect available worlds")
+        raise typer.BadParameter(
+            "matched 0 worlds; run `lifeos world-list` to inspect available worlds"
+        )
     if len(matches) > 1:
-        rendered = ", ".join(f"{world.display_name}({world.pack_id}:{world.world_id})" for world in matches)
-        raise typer.BadParameter(f"matched {len(matches)} worlds; add --world-id or --name. matches: {rendered}")
+        rendered = ", ".join(
+            f"{world.display_name}({world.pack_id}:{world.world_id})" for world in matches
+        )
+        raise typer.BadParameter(
+            f"matched {len(matches)} worlds; add --world-id or --name. matches: {rendered}"
+        )
     return matches[0]
 
 
@@ -66,7 +74,9 @@ def _resolve_world_for_command(
 ) -> str:
     if pack_id or display_name:
         worlds = client.list_worlds()
-        return _select_world(worlds, world_id=world_id, pack_id=pack_id, display_name=display_name).world_id
+        return _select_world(
+            worlds, world_id=world_id, pack_id=pack_id, display_name=display_name
+        ).world_id
     return world_id or _world_id(None)
 
 
@@ -86,12 +96,12 @@ def login(
 
 @app.command("world-create")
 def world_create(
-    pack_id: str = typer.Option("alice", "--pack"),
-    name: str = typer.Option("我的 Alice", "--name"),
+    pack_id: str = typer.Option("chenyuan", "--pack"),
+    name: str = typer.Option("我的陈远", "--name"),
     set_default: bool = typer.Option(True, "--set-default/--no-set-default"),
 ) -> None:
     with _client() as client:
-        client.install_alice_preset()
+        client.install_chenyuan_preset()
         world = client.create_world(pack_id, name)
     if set_default:
         store = ConfigStore()
@@ -119,8 +129,12 @@ def world_list() -> None:
 
 @app.command("world-use")
 def world_use(
-    world_id: str | None = typer.Option(None, "--world-id", help="Exact world_id to set as default"),
-    pack_id: str | None = typer.Option(None, "--pack", help="Select the only world for this pack_id"),
+    world_id: str | None = typer.Option(
+        None, "--world-id", help="Exact world_id to set as default"
+    ),
+    pack_id: str | None = typer.Option(
+        None, "--pack", help="Select the only world for this pack_id"
+    ),
     name: str | None = typer.Option(None, "--name", help="Select by world display_name"),
 ) -> None:
     store = ConfigStore()
@@ -174,7 +188,9 @@ def context_pull(
             tag = block.tag or "-"
             console.print(f"  {i}. {block_id:22s} tag={tag:18s} len={block.content_length}")
         console.print()
-        console.print(Panel(result.system, title=f"LifeOS context ({connector})", border_style="cyan"))
+        console.print(
+            Panel(result.system, title=f"LifeOS context ({connector})", border_style="cyan")
+        )
         return
     console.print(Panel(result.system, title=f"LifeOS context ({connector})", border_style="cyan"))
 
@@ -212,28 +228,44 @@ def session_end(
 
 @app.command("dream-run")
 def dream_run(
-    world: str | None = typer.Option(None, "--world", "--world-id", help="Exact world_id to generate dreams for"),
-    pack_id: str | None = typer.Option(None, "--pack", help="Select the only world for this pack_id"),
+    world: str | None = typer.Option(
+        None, "--world", "--world-id", help="Exact world_id to generate dreams for"
+    ),
+    pack_id: str | None = typer.Option(
+        None, "--pack", help="Select the only world for this pack_id"
+    ),
     name: str | None = typer.Option(None, "--name", help="Select by world display_name"),
-    dream_date: str | None = typer.Option(None, "--date", help="Generate this local date, e.g. 2026-06-02"),
-    force: bool = typer.Option(False, "--force", help="Regenerate even if the dream already exists"),
+    dream_date: str | None = typer.Option(
+        None, "--date", help="Generate this local date, e.g. 2026-06-02"
+    ),
+    force: bool = typer.Option(
+        False, "--force", help="Regenerate even if the dream already exists"
+    ),
 ) -> None:
     config = ConfigStore().load()
     with LifeOSClient(config) as client:
-        world_id = _resolve_world_for_command(client, config, world_id=world, pack_id=pack_id, display_name=name)
+        world_id = _resolve_world_for_command(
+            client, config, world_id=world, pack_id=pack_id, display_name=name
+        )
         result = client.dream_run(world_id=world_id, dream_date=dream_date, force=force)
     console.print(json.dumps(result, ensure_ascii=False, indent=2))
 
 
 @app.command("dream-show")
 def dream_show(
-    world: str | None = typer.Option(None, "--world", "--world-id", help="Exact world_id to inspect"),
-    pack_id: str | None = typer.Option(None, "--pack", help="Select the only world for this pack_id"),
+    world: str | None = typer.Option(
+        None, "--world", "--world-id", help="Exact world_id to inspect"
+    ),
+    pack_id: str | None = typer.Option(
+        None, "--pack", help="Select the only world for this pack_id"
+    ),
     name: str | None = typer.Option(None, "--name", help="Select by world display_name"),
 ) -> None:
     config = ConfigStore().load()
     with LifeOSClient(config) as client:
-        world_id = _resolve_world_for_command(client, config, world_id=world, pack_id=pack_id, display_name=name)
+        world_id = _resolve_world_for_command(
+            client, config, world_id=world, pack_id=pack_id, display_name=name
+        )
         result = client.dream_latest(world_id=world_id)
     console.print(json.dumps(result, ensure_ascii=False, indent=2))
 
@@ -241,13 +273,23 @@ def dream_show(
 @connector_app.command("install")
 def connector_install(
     name: str = typer.Argument(..., help="pi | claude-code | codex | hermes | openclaw"),
-    symlink: bool = typer.Option(False, "--symlink", help="Symlink hook/extension instead of copy (dev)"),
+    symlink: bool = typer.Option(
+        False, "--symlink", help="Symlink hook/extension instead of copy (dev)"
+    ),
     extensions_dir: str | None = typer.Option(None, "--extensions-dir"),
-    claude_settings: str | None = typer.Option(None, "--claude-settings", help="Claude Code settings.json path"),
-    codex_home: str | None = typer.Option(None, "--codex-home", help="Codex home (default ~/.codex)"),
-    hermes_plugins_dir: str | None = typer.Option(None, "--hermes-plugins-dir", help="Hermes plugins dir (default ~/.hermes/plugins)"),
+    claude_settings: str | None = typer.Option(
+        None, "--claude-settings", help="Claude Code settings.json path"
+    ),
+    codex_home: str | None = typer.Option(
+        None, "--codex-home", help="Codex home (default ~/.codex)"
+    ),
+    hermes_plugins_dir: str | None = typer.Option(
+        None, "--hermes-plugins-dir", help="Hermes plugins dir (default ~/.hermes/plugins)"
+    ),
     openclaw_extensions_dir: str | None = typer.Option(
-        None, "--openclaw-extensions-dir", help="OpenClaw extensions dir (default ~/.openclaw/extensions)"
+        None,
+        "--openclaw-extensions-dir",
+        help="OpenClaw extensions dir (default ~/.openclaw/extensions)",
     ),
 ) -> None:
     if name in {"pi"}:
@@ -304,7 +346,9 @@ def connector_install(
         console.print("        openclaw gateway restart   # 或重启 Gateway")
         return
 
-    raise typer.BadParameter(f"unsupported connector: {name} (try: pi, claude-code, codex, hermes, openclaw)")
+    raise typer.BadParameter(
+        f"unsupported connector: {name} (try: pi, claude-code, codex, hermes, openclaw)"
+    )
 
 
 def main() -> None:

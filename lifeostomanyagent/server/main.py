@@ -20,7 +20,7 @@ async def lifespan(_: FastAPI):
     init_db()
     db = get_db()
     try:
-        LifeOSService(db).ensure_alice_preset()
+        LifeOSService(db).ensure_chenyuan_preset()
     finally:
         db.close()
     yield

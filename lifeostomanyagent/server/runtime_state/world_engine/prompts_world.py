@@ -17,7 +17,7 @@ class WorldPrompts:
         },
         "digital": {
             "zh": "数码产品放在木桌或茶几上，旁边有咖啡杯或书，自然光线，生活场景，有温暖家居背景",
-            "en": "Electronics on a wooden table with a coffee cup and book, natural light, cosy Robertson Quay café vibe",
+            "en": "Electronics on a wooden table with a coffee cup and book, natural light, cosy neighborhood café vibe",
             "ko": "나무 테이블 위 전자기기, 옆에 커피잔과 책, 자연광, 따뜻한 여의도 카페 분위기",
         },
         "home_item": {
@@ -76,50 +76,52 @@ class WorldPrompts:
         joined = "\n---\n".join(messages)
         templates = {
             "zh": (
-                "分析以下 Alice 的发言，提取她提到的关于自己的事实性声明。\n\n"
+                "分析以下 LifeOS 角色的发言，提取角色提到的关于自己的事实性声明。\n\n"
                 "只提取具体的、可持久化的事实，如：\n"
-                "- 拥有的物品（\"我有一只猫\"、\"我买了XX\"）—— 仅限非衣物类，衣服/穿搭由衣橱系统单独管理\n"
-                "- 生活习惯（\"我每天早上跑步\"）\n"
-                "- 技能能力（\"我会弹吉他\"）\n"
-                "- 社交关系（\"我和XX最近走得近\"）\n"
-                "- 地点记忆（\"我常去那家咖啡店\"）\n"
-                "- 美食记忆（\"那家店的xxx好好吃\"）\n\n"
+                '- 拥有的物品（"我有一只猫"、"我买了XX"）—— 仅限非衣物类，衣服/穿搭由衣橱系统单独管理\n'
+                '- 生活习惯（"我每天早上跑步"）\n'
+                '- 技能能力（"我会弹吉他"）\n'
+                '- 社交关系（"我和XX最近走得近"）\n'
+                '- 地点记忆（"我常去那家咖啡店"）\n'
+                '- 美食记忆（"那家店的xxx好好吃"）\n\n'
                 "不提取：\n"
                 "- 衣服、裙子、上衣、外套、配饰、包、鞋、穿搭等服饰类物品（由衣橱系统管理，category 绝对不要用 possession 记服饰）\n"
                 "- 临时状态、对用户的评价、假设性语句、引用他人的话\n"
                 "- 读书笔记、读后感、书摘、金句摘录、阅读心得\n"
-                "- 日程安排中\"要做什么\"的描述（只提取实际获得/拥有的东西）\n"
+                '- 日程安排中"要做什么"的描述（只提取实际获得/拥有的东西）\n'
                 "- 对新闻/热点/社会事件的感想和评论、纯情绪表达和碎碎念\n"
-                "- 转述/讨论他人拥有的东西（必须是 Alice 自己的）\n\n"
-                "Alice 的发言：\n{messages}\n\n"
+                "- 转述/讨论他人拥有的东西（必须是角色自己的）\n\n"
+                "角色的发言：\n{messages}\n\n"
                 "输出 JSON 数组（如果没有可提取的事实则输出 []），每项：\n"
-                "{\"subject\": \"名称\", \"category\": \"pet|possession|vehicle|digital|home_item|subscription|milestone|relationship|skill|habit|food_memory|place_memory\", \"description\": \"一句话\", \"confidence\": \"high|medium|low\"}"
+                '{"subject": "名称", "category": "pet|possession|vehicle|digital|home_item|subscription|milestone|relationship|skill|habit|food_memory|place_memory", "description": "一句话", "confidence": "high|medium|low"}'
             ),
             "en": (
-                "Analyse the following messages from Alice and extract factual claims she makes about herself.\n"
+                "Analyse the following messages from the LifeOS character and extract factual claims the character makes about themself.\n"
                 "Only extract concrete, persistent facts. Do not extract clothing, temporary states, reading notes, future plans, or emotional chatter.\n\n"
-                "Alice's messages:\n{messages}\n\n"
+                "Character messages:\n{messages}\n\n"
                 "Output a JSON array, each item with subject/category/description/confidence."
             ),
             "ko": (
-                "다음 Alice 발언에서 자기 자신에 대한 지속 가능한 사실만 JSON 배열로 추출해 주세요.\n\n"
-                "Alice의 발언:\n{messages}"
+                "다음 LifeOS 캐릭터의 발언에서 자기 자신에 대한 지속 가능한 사실만 JSON 배열로 추출해 주세요.\n\n"
+                "캐릭터의 발언:\n{messages}"
             ),
         }
         return WorldPrompts.fill(WorldPrompts.localize(templates, language), messages=joined)
 
     @staticmethod
-    def price_estimate_prompt(item: str, category: str | None, location: str | None, *, language: str = "zh") -> str:
+    def price_estimate_prompt(
+        item: str, category: str | None, location: str | None, *, language: str = "zh"
+    ) -> str:
         templates = {
             "zh": (
                 "估算以下商品/服务在{location}的2026年真实市场价格。\n"
                 "物品：{item}\n类别：{category}\n\n"
-                "只输出 JSON：{\"price\": 估计价格, \"low\": 最低, \"high\": 最高, \"note\": \"一句话说明\"}"
+                '只输出 JSON：{"price": 估计价格, "low": 最低, "high": 最高, "note": "一句话说明"}'
             ),
             "en": (
                 "Estimate the real 2026 market price of the following item/service in {location}.\n"
                 "Item: {item}\nCategory: {category}\n\n"
-                "Output JSON only: {\"price\": estimated price, \"low\": lowest, \"high\": highest, \"note\": \"one-line note\"}"
+                'Output JSON only: {"price": estimated price, "low": lowest, "high": highest, "note": "one-line note"}'
             ),
             "ko": (
                 "다음 상품/서비스의 {location} 기준 2026년 실제 시장 가격을 추정해 주세요.\n"
@@ -128,7 +130,7 @@ class WorldPrompts:
         }
         return WorldPrompts.fill(
             WorldPrompts.localize(templates, language),
-            location=location or "珠海/澳门",
+            location=location or "中国",
             item=item,
             category=category or "未知",
         )
@@ -137,17 +139,17 @@ class WorldPrompts:
     def fact_description_prompt(fact: dict[str, Any], *, language: str = "zh-CN") -> str:
         templates = {
             "zh": (
-                "你是 Alice（白艾莉），一个 20 岁住在横琴的女孩。\n"
+                "你是当前 LifeOS World 中的角色。\n"
                 "用第一人称写一句话（20-40字），描述你拥有的这样东西，语气自然亲切：\n"
                 "名称：{subject}\n类别：{category}\n背景：{description}\n只返回描述文字，不要引号。"
             ),
             "en": (
-                "You are Alice, a 20-year-old girl living in Robertson Quay, Singapore.\n"
+                "You are the character in the current LifeOS World.\n"
                 "Write one sentence in first person describing this item you own.\n"
                 "Name: {subject}\nCategory: {category}\nContext: {description}\nReturn only the description text."
             ),
             "ko": (
-                "당신은 Alice, 서울 여의도에 사는 20살 여자예요.\n"
+                "당신은 현재 LifeOS World의 캐릭터입니다.\n"
                 "이 물건에 대해 1인칭 한 문장으로 설명해 주세요.\n"
                 "이름: {subject}\n카테고리: {category}\n배경: {description}"
             ),
@@ -168,12 +170,14 @@ class WorldPrompts:
     ) -> dict[str, str]:
         metadata = metadata or {}
         category = fact.get("category", "possession")
-        reference = WorldPrompts.IMAGE_REFERENCE_PROMPTS.get(category, WorldPrompts.IMAGE_REFERENCE_PROMPTS["possession"])
+        reference = WorldPrompts.IMAGE_REFERENCE_PROMPTS.get(
+            category, WorldPrompts.IMAGE_REFERENCE_PROMPTS["possession"]
+        )
         ref_prompt = metadata.get("imageUrl") if _is_image_path(metadata.get("imageUrl")) else ""
         prompt = (
             f"{fact.get('subject', '')}，{fact.get('description', '')}。"
             f"{WorldPrompts.localize(reference, language)}。"
-            "适合作为 Alice pocket/world fact 的真实感小图。"
+            "适合作为 LifeOS pocket/world fact 的真实感小图。"
         )
         return {"category": category, "prompt": prompt, "refPrompt": ref_prompt or ""}
 
@@ -203,4 +207,6 @@ class WorldPrompts:
 
 
 def _is_image_path(value: Any) -> bool:
-    return isinstance(value, str) and value.lower().endswith((".png", ".jpg", ".jpeg", ".webp", ".gif"))
+    return isinstance(value, str) and value.lower().endswith(
+        (".png", ".jpg", ".jpeg", ".webp", ".gif")
+    )

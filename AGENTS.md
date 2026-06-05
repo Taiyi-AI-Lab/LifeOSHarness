@@ -5,7 +5,7 @@
 ## 仓库定位
 
 - 本仓库是 **LifeOS Platform 后端平台**：基于 Python / FastAPI 的 Agent World Runtime，外加各类 Connector 与 CLI/SDK。
-- **Alice 桌面客户端（Electron 伴侣应用）的代码不在本仓库中**，它属于更大的产品愿景与 roadmap。请勿在本仓库中假设存在 Electron / 渲染进程 / IPC 代码。
+- **桌面客户端（Electron 伴侣应用）的代码不在本仓库中**，它属于更大的产品愿景与 roadmap。请勿在本仓库中假设存在 Electron / 渲染进程 / IPC 代码。
 - 修改前先阅读相关目录的现有实现与 `docs/` 下的说明文档，保持与现有工程风格一致。
 
 ## 技术栈与工具

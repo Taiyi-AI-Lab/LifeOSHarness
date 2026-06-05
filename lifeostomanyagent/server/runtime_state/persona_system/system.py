@@ -14,7 +14,7 @@ DEFAULT_STATE = {
     "affinity": 0,
     "trust": 0,
     "familiarity": 0,
-    "location": "新加坡 Robertson Quay 附近",
+    "location": "2035 年中国一座普通城市的出租屋",
     "statusTags": [],
     "relationshipStage": 1,
 }
@@ -28,7 +28,7 @@ def _clamp(value: int | float, low: int = 0, high: int = 100) -> int:
     return max(low, min(high, int(value)))
 
 
-class AlicePersonaSystem:
+class PersonaSystem:
     def __init__(self, file_path: str | None = None, *, store: SQLRuntimeStore | None = None):
         self.store = store
         self.file_path = Path(file_path) if file_path else None
@@ -142,8 +142,8 @@ class AlicePersonaSystem:
     def build_persona_context(self, *, now: int | None = None) -> str:
         now = now if now is not None else _now()
         lines = [
-            "<alice_persona>",
-            "# Alice Persona",
+            "<agent_persona>",
+            "# Agent Persona",
             f"- mood: {self.state['mood']} ({_mood_label(self.state['mood'])})",
             f"- energy: {self.state['energy']}",
             f"- socialNeed: {self.state['socialNeed']}",
@@ -163,7 +163,7 @@ class AlicePersonaSystem:
             for entry in self.journal[-5:]:
                 age = max(0, (now - int(entry["createdAt"])) // 60_000)
                 lines.append(f"- {entry['content']}（{age} 分钟前）")
-        lines.append("</alice_persona>")
+        lines.append("</agent_persona>")
         return "\n".join(lines)
 
     def _relationship_stage(self) -> int:

@@ -98,23 +98,21 @@ def test_pre_llm_call_returns_context(tmp_path: Path, monkeypatch):
     def fake_api_post(config, path, body):
         calls.append((path, body))
         if path == "/runtime/context":
-            return {"system": "Alice context block", "injected": True}
+            return {"system": "陈远 context block", "injected": True}
         return {}
 
     monkeypatch.setattr(client, "api_post", fake_api_post)
 
     plugin = _load_register(client_module=client)
     result = plugin._pre_llm_call("sess-1", "你好", model="test")
-    assert result == {"context": "Alice context block"}
+    assert result == {"context": "陈远 context block"}
     assert calls[0][0] == "/runtime/context"
     assert calls[0][1]["user_message"] == "你好"
     assert calls[0][1]["connector_id"] == "hermes"
     assert calls[1][0] == "/runtime/turn/begin"
 
 
-def test_pre_llm_call_does_not_begin_turn_when_context_not_injected(
-    tmp_path: Path, monkeypatch
-):
+def test_pre_llm_call_does_not_begin_turn_when_context_not_injected(tmp_path: Path, monkeypatch):
     client = _load_lifeos_client()
     config_path = tmp_path / "config.json"
     config_path.write_text(

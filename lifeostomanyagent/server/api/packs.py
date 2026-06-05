@@ -13,12 +13,12 @@ from lifeostomanyagent.server.services import LifeOSService
 router = APIRouter(prefix="/packs", tags=["packs"])
 
 
-@router.post("/presets/alice", response_model=PackResponse)
-def install_alice_preset(
+@router.post("/presets/chenyuan", response_model=PackResponse)
+def install_chenyuan_preset(
     _: str = Depends(require_api_key),
     service: LifeOSService = Depends(get_service),
 ) -> PackResponse:
-    return service.ensure_alice_preset()
+    return service.ensure_chenyuan_preset()
 
 
 @router.post("", response_model=PackResponse)

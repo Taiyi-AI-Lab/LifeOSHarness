@@ -23,7 +23,7 @@ CHITCHAT_PATTERNS: tuple[str, ...] = (
     r"^(hi|hello|hey|你好|嗨|早|早安|晚安|在吗|在不在|哈喽)[呀啊～~！!。\s]*$",
     r"(陪我|陪陪我|聊聊|说会儿话|随便聊|想聊)",
     r"(有点累|好累|难过|睡不着|焦虑|烦|崩溃|开心|想你|孤独|委屈|emo)",
-    r"(alice|你).{0,8}(在吗|心情|今天怎么样|想我|记得我|梦见|昨晚梦)",
+    r"(chenyuan|你).{0,8}(在吗|心情|今天怎么样|想我|记得我|梦见|昨晚梦)",
     r"(昨晚梦见什么|做梦了吗|还记得我吗|你还记得)",
     r"(我们聊了|之前聊过|上次聊过|之前说过|上次说过)",
     r"(刚下班|今天发生|突然想|跟你说句话|近况)",
@@ -41,9 +41,7 @@ class IntentClassification:
 def classify_intent_rules(user_message: str) -> IntentClassification:
     text = _normalize(user_message)
     if not text:
-        return IntentClassification(
-            "task", "rules", 0.6, "空输入按任务处理，避免误注入 LifeOS。"
-        )
+        return IntentClassification("task", "rules", 0.6, "空输入按任务处理，避免误注入 LifeOS。")
 
     if _matches_any(TASK_PATTERNS, text):
         return IntentClassification("task", "rules", 0.9, "命中明确任务信号。")
@@ -51,9 +49,7 @@ def classify_intent_rules(user_message: str) -> IntentClassification:
     if _matches_any(CHITCHAT_PATTERNS, text):
         return IntentClassification("chitchat", "rules", 0.85, "命中闲聊/陪伴信号。")
 
-    return IntentClassification(
-        "task", "rules", 0.55, "未命中明确闲聊信号，默认按任务处理。"
-    )
+    return IntentClassification("task", "rules", 0.55, "未命中明确闲聊信号，默认按任务处理。")
 
 
 def classify_intent(
@@ -109,9 +105,7 @@ class DeepSeekIntentClassifier:
             ],
             "stream": False,
         }
-        client = self._client or httpx.Client(
-            timeout=self.timeout_seconds, trust_env=False
-        )
+        client = self._client or httpx.Client(timeout=self.timeout_seconds, trust_env=False)
         should_close = self._client is None
         try:
             response = client.post(
@@ -136,7 +130,7 @@ class DeepSeekIntentClassifier:
             "你是 LifeOS 的意图分类器，只判断是否应该注入 LifeOS 陪伴/人格上下文。"
             "不要回答用户问题，不要执行任务。任务、工具调用、代码、文件、搜索、总结、"
             "翻译、分析、生成产物都分类为 task。只有明确日常闲聊、情绪陪伴、关系互动、"
-            "Alice/LifeOS 人格互动、梦境或记忆闲谈才分类为 chitchat。"
+            "陈远/LifeOS 人格互动、梦境或记忆闲谈才分类为 chitchat。"
             "冲突时输出 task。只输出严格 JSON。"
         )
 
@@ -165,9 +159,7 @@ class DeepSeekIntentClassifier:
         if confidence < self.min_confidence:
             return None
         reason = str(data.get("reason") or "").strip()[:120]
-        return IntentClassification(
-            intent, "llm", min(confidence, 1.0), reason or "LLM 分类结果。"
-        )
+        return IntentClassification(intent, "llm", min(confidence, 1.0), reason or "LLM 分类结果。")
 
 
 def _normalize(text: str) -> str:

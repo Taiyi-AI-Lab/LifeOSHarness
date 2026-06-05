@@ -121,5 +121,5 @@ This lets the same world follow a user across different agent clients without re
 
 - Authentication is a single shared API key.
 - Database schema is created with SQLAlchemy `create_all`; there is no Alembic migration layer yet.
-- Alice is an example preset, not a required product identity.
+- 陈远 is an example preset, not a required product identity.
 - The pi overlay is intentionally specific and should be treated as an example overlay rather than a generic runtime contract.

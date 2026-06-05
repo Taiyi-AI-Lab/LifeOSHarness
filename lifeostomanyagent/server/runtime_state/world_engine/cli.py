@@ -7,7 +7,7 @@ from .engine import WorldEngine
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(description="Alice World Engine Python 复现 demo")
+    parser = argparse.ArgumentParser(description="LifeOS World Engine Python 复现 demo")
     parser.add_argument("--db", default="lifeos/world.sqlite3", help="SQLite 数据库路径")
     subparsers = parser.add_subparsers(dest="command", required=True)
 

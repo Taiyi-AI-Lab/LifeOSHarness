@@ -25,11 +25,7 @@ def _compact_block(content: str, max_len: int) -> str:
         return content[:max_len]
     head = max_len // 2
     tail = max_len - head - 40
-    return (
-        content[:head]
-        + "\n\n<trimmed>…内容因长度限制已截断…</trimmed>\n\n"
-        + content[-tail:]
-    )
+    return content[:head] + "\n\n<trimmed>…内容因长度限制已截断…</trimmed>\n\n" + content[-tail:]
 
 
 class PromptComposer:
@@ -95,7 +91,9 @@ class PromptComposer:
 
         guardrails = render_platform_guardrails()
         if guardrails:
-            blocks.append({"id": "platform_guardrails", "tag": "<platform_guardrails>", "content": guardrails})
+            blocks.append(
+                {"id": "platform_guardrails", "tag": "<platform_guardrails>", "content": guardrails}
+            )
 
         identity = render_agent_identity(self.pack, self.overrides)
         if identity:
@@ -103,11 +101,15 @@ class PromptComposer:
 
         behavior = render_behavior_profile(self.pack)
         if behavior:
-            blocks.append({"id": "behavior_profile", "tag": "<behavior_profile>", "content": behavior})
+            blocks.append(
+                {"id": "behavior_profile", "tag": "<behavior_profile>", "content": behavior}
+            )
 
         trajectory = render_behavior_trajectory(self.pack)
         if trajectory:
-            blocks.append({"id": "behavior_trajectory", "tag": "<behavior_trajectory>", "content": trajectory})
+            blocks.append(
+                {"id": "behavior_trajectory", "tag": "<behavior_trajectory>", "content": trajectory}
+            )
 
         world_rules = render_world_rules(self.pack)
         if world_rules:
@@ -116,12 +118,12 @@ class PromptComposer:
         if self.persona_system:
             content = self.persona_system.build_persona_context(now=now)
             if content:
-                blocks.append({"id": "persona_state", "tag": "<alice_persona>", "content": content})
+                blocks.append({"id": "persona_state", "tag": "<agent_persona>", "content": content})
 
         if self.emotion_system:
             content = self.emotion_system.build_emotion_prompt_block()
             if content:
-                blocks.append({"id": "emotion_state", "tag": "<alice_emotion>", "content": content})
+                blocks.append({"id": "emotion_state", "tag": "<agent_emotion>", "content": content})
 
         if self.dream_engine:
             content = self.dream_engine.build_prompt_block()
@@ -131,7 +133,9 @@ class PromptComposer:
         if self.memory_system:
             content = self.memory_system.get_system_prompt_block()
             if content:
-                blocks.append({"id": "user_memory", "tag": "<user_memory_update>", "content": content})
+                blocks.append(
+                    {"id": "user_memory", "tag": "<user_memory_update>", "content": content}
+                )
 
         if self.world_engine:
             content = self.world_engine.build_world_facts_prompt_block(now=now)
@@ -141,7 +145,9 @@ class PromptComposer:
         if profile.include_overlay and profile.overlay_key:
             overlay = load_connector_overlay(profile.overlay_key)
             if overlay:
-                blocks.append({"id": "connector_overlay", "tag": "<connector_overlay>", "content": overlay})
+                blocks.append(
+                    {"id": "connector_overlay", "tag": "<connector_overlay>", "content": overlay}
+                )
 
         for index, block in enumerate(extra_blocks or []):
             if block:
@@ -172,15 +178,21 @@ class PromptComposer:
             return working
 
         # Fit connector overlay into remaining budget before dropping other blocks.
-        overlay_indices = [i for i, block in enumerate(working) if block["id"] == "connector_overlay"]
+        overlay_indices = [
+            i for i, block in enumerate(working) if block["id"] == "connector_overlay"
+        ]
         if overlay_indices:
             overlay_index = overlay_indices[0]
             overlay = working[overlay_index]
-            base_len = total_len([block for idx, block in enumerate(working) if idx != overlay_index])
+            base_len = total_len(
+                [block for idx, block in enumerate(working) if idx != overlay_index]
+            )
             available = max_chars - base_len
             if available >= 500:
                 if len(overlay["content"]) > available:
-                    working[overlay_index]["content"] = _compact_block(overlay["content"], available)
+                    working[overlay_index]["content"] = _compact_block(
+                        overlay["content"], available
+                    )
             else:
                 working.pop(overlay_index)
 
@@ -212,7 +224,9 @@ class PromptComposer:
             ]
             if not trimmable:
                 break
-            trim_index, block = min(trimmable, key=lambda item: priority_index.get(item[1]["id"], 999))
+            trim_index, block = min(
+                trimmable, key=lambda item: priority_index.get(item[1]["id"], 999)
+            )
             overflow = total_len(working) - max_chars
             new_len = max(200, len(block["content"]) - overflow)
             working[trim_index]["content"] = _compact_block(block["content"], new_len)
