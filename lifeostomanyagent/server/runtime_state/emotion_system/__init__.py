@@ -1,4 +1,4 @@
 from .rules import EmotionRules
-from .system import AliceEmotionSystem
+from .system import EmotionSystem
 
-__all__ = ["AliceEmotionSystem", "EmotionRules"]
+__all__ = ["EmotionSystem", "EmotionRules"]

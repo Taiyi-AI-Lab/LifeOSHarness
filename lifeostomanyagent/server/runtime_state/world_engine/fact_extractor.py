@@ -10,7 +10,7 @@ from .prompts_world import WorldPrompts
 from .store import WorldStore
 
 
-class AliceFactExtractor:
+class AgentFactExtractor:
     def __init__(
         self,
         store: WorldStore,
@@ -22,7 +22,9 @@ class AliceFactExtractor:
         self.enricher = enricher
         self.now = now or (lambda: int(time.time() * 1000))
 
-    def extract_alice_facts(self, messages: list[str], llm: Callable[[str], str]) -> list[dict[str, Any]]:
+    def extract_agent_facts(
+        self, messages: list[str], llm: Callable[[str], str]
+    ) -> list[dict[str, Any]]:
         if not messages:
             return []
         prompt = self.build_prompt(messages)

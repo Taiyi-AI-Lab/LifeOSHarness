@@ -15,16 +15,16 @@ def test_health(client):
     assert response.json()["status"] == "ok"
 
 
-def test_alice_preset_and_world_flow(client):
-    preset = client.post("/packs/presets/alice", headers=API_HEADERS)
+def test_chenyuan_preset_and_world_flow(client):
+    preset = client.post("/packs/presets/chenyuan", headers=API_HEADERS)
     assert preset.status_code == 200
-    assert preset.json()["pack_id"] == "alice"
+    assert preset.json()["pack_id"] == "chenyuan"
     assert preset.json()["is_preset"] is True
 
     world = client.post(
         "/worlds",
         headers=API_HEADERS,
-        json={"pack_id": "alice", "display_name": "测试 Alice"},
+        json={"pack_id": "chenyuan", "display_name": "测试陈远"},
     )
     assert world.status_code == 200
     world_id = world.json()["world_id"]
@@ -54,7 +54,7 @@ def test_alice_preset_and_world_flow(client):
     assert context.status_code == 200
     body = context.json()
     assert body["world_id"] == world_id
-    assert "Alice" in body["system"]
+    assert "陈远" in body["system"]
     assert "今天有点累" in body["system"]
     assert "agent_identity" in body["order"]
     assert "connector_overlay" not in body["order"]
@@ -74,11 +74,11 @@ def test_alice_preset_and_world_flow(client):
 
 
 def test_turn_begin_and_finish(client):
-    client.post("/packs/presets/alice", headers=API_HEADERS)
+    client.post("/packs/presets/chenyuan", headers=API_HEADERS)
     world = client.post(
         "/worlds",
         headers=API_HEADERS,
-        json={"pack_id": "alice", "display_name": "turn test"},
+        json={"pack_id": "chenyuan", "display_name": "turn test"},
     ).json()
     world_id = world["world_id"]
 
@@ -134,11 +134,11 @@ def test_custom_pack(client):
 
 
 def test_pi_vs_hermes_context_size(client):
-    client.post("/packs/presets/alice", headers=API_HEADERS)
+    client.post("/packs/presets/chenyuan", headers=API_HEADERS)
     world_id = client.post(
         "/worlds",
         headers=API_HEADERS,
-        json={"pack_id": "alice", "display_name": "connector diff"},
+        json={"pack_id": "chenyuan", "display_name": "connector diff"},
     ).json()["world_id"]
 
     hermes = client.post(
@@ -160,11 +160,11 @@ def test_pi_vs_hermes_context_size(client):
 
 
 def test_context_skips_lifeos_for_task_by_default(client):
-    client.post("/packs/presets/alice", headers=API_HEADERS)
+    client.post("/packs/presets/chenyuan", headers=API_HEADERS)
     world_id = client.post(
         "/worlds",
         headers=API_HEADERS,
-        json={"pack_id": "alice", "display_name": "intent gate"},
+        json={"pack_id": "chenyuan", "display_name": "intent gate"},
     ).json()["world_id"]
 
     context = client.post(
@@ -188,11 +188,11 @@ def test_context_skips_lifeos_for_task_by_default(client):
 
 
 def test_context_injects_for_explicit_chitchat_override(client):
-    client.post("/packs/presets/alice", headers=API_HEADERS)
+    client.post("/packs/presets/chenyuan", headers=API_HEADERS)
     world_id = client.post(
         "/worlds",
         headers=API_HEADERS,
-        json={"pack_id": "alice", "display_name": "intent override"},
+        json={"pack_id": "chenyuan", "display_name": "intent override"},
     ).json()["world_id"]
 
     context = client.post(
@@ -208,7 +208,7 @@ def test_context_injects_for_explicit_chitchat_override(client):
 
     assert context.status_code == 200
     body = context.json()
-    assert "Alice" in body["system"]
+    assert "陈远" in body["system"]
     assert body["resolved_intent"] == "chitchat"
     assert body["injected"] is True
     assert body["intent_classifier"] == "explicit"
@@ -234,11 +234,11 @@ def test_context_uses_llm_classifier_when_configured(client, monkeypatch):
         FakeIntentClassifier,
     )
 
-    client.post("/packs/presets/alice", headers=API_HEADERS)
+    client.post("/packs/presets/chenyuan", headers=API_HEADERS)
     world_id = client.post(
         "/worlds",
         headers=API_HEADERS,
-        json={"pack_id": "alice", "display_name": "intent llm"},
+        json={"pack_id": "chenyuan", "display_name": "intent llm"},
     ).json()["world_id"]
 
     context = client.post(
@@ -325,8 +325,6 @@ def test_dream_run_and_context_injection(client):
     assert "dream_context" in second_context["order"]
     assert "阿嬷的信" in second_context["system"]
 
-    latest = client.get(
-        f"/runtime/dreams/latest?world_id={world_id}", headers=API_HEADERS
-    )
+    latest = client.get(f"/runtime/dreams/latest?world_id={world_id}", headers=API_HEADERS)
     assert latest.status_code == 200
     assert latest.json()["dream"]["dream_date"] == today

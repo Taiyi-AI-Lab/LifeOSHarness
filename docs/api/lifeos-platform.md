@@ -6,7 +6,7 @@ LifeOS 将「Agent 世界」（人设、行为轨迹、世界规则、运行时 
 
 - **Server**：FastAPI + SQLAlchemy 核心存储（默认 SQLite，可选 PostgreSQL）+ Redis（context 短缓存，可选）
 - **Client**：`lifeos` CLI / Python SDK
-- **Alice**：示例 preset `POST /packs/presets/alice`
+- **陈远**：示例 preset `POST /packs/presets/chenyuan`
 
 ## 认证
 
@@ -18,7 +18,7 @@ X-API-Key: <LIFEOS_API_KEY>
 
 ## 核心流程
 
-1. `POST /packs/presets/alice` 或 `POST /packs` 创建 Pack
+1. `POST /packs/presets/chenyuan` 或 `POST /packs` 创建 Pack
 2. `POST /worlds` 创建 WorldInstance
 3. `POST /runtime/session/start` — pi 会话级绑定（首次）
 4. `POST /runtime/turn/begin` — 单轮开始（情绪 `chat_started`）
@@ -38,7 +38,7 @@ X-API-Key: <LIFEOS_API_KEY>
 uv run lifeos connector install claude-code
 ```
 
-Hook 写入 `~/.claude/settings.json`；脚本 `~/.lifeos/hooks/lifeos_hook.py`。`UserPromptSubmit` 时输出 `additionalContext`（完整 Alice/system 块）。
+Hook 写入 `~/.claude/settings.json`；脚本 `~/.lifeos/hooks/lifeos_hook.py`。`UserPromptSubmit` 时输出 `additionalContext`（完整 陈远/system 块）。
 
 ## Codex 联动
 
@@ -95,7 +95,7 @@ openclaw gateway restart
 
 ```bash
 uv run lifeos connector install pi
-uv run lifeos login && uv run lifeos world-create --pack alice
+uv run lifeos login && uv run lifeos world-create --pack chenyuan
 pi    # 会话内可用 /lifeos 检查连接
 ```
 
@@ -143,14 +143,14 @@ Extension 安装到 `~/.pi/agent/extensions/lifeos.ts`，通过 `before_agent_st
 | `behavior_profile` | 说话风格 / 禁止表达 | 是 | 是 |
 | `behavior_trajectory` | 行为轨迹 / 反应模式 | 是 | 是 |
 | `world_rules` | 时区 / 地点 / 世界事实 | 是 | 是 |
-| `persona_state` | 运行时 `<alice_persona>` | 是 | 是 |
-| `emotion_state` | 运行时 `<alice_emotion>` | 是 | 是 |
+| `persona_state` | 运行时 `<agent_persona>` | 是 | 是 |
+| `emotion_state` | 运行时 `<agent_emotion>` | 是 | 是 |
 | `user_memory` | 运行时 `<user_memory_update>` | 是 | 是 |
 | `world_facts` | 运行时 World Facts | 是 | 是 |
 | `connector_overlay` | pi 工具 playbook | **否** | 是（压缩适配 28KB 预算） |
 | `user_message` | 当前用户输入 | 是 | 是 |
 
-外部 Connector（`hermes` / `claude-code` / `codex` / `openclaw`）默认 **不含** pi/Alice 工具说明（OOXML、novel_write、Skills 列表等）；这些在 [`server/overlays/pi_tools.md`](../../lifeostomanyagent/server/overlays/pi_tools.md)，仅 `connector_id=pi` 时注入。
+外部 Connector（`hermes` / `claude-code` / `codex` / `openclaw`）默认 **不含** pi/陈远 工具说明（OOXML、novel_write、Skills 列表等）；这些在 [`server/overlays/pi_tools.md`](../../lifeostomanyagent/server/overlays/pi_tools.md)，仅 `connector_id=pi` 时注入。
 
 ## Inspector API
 
@@ -231,7 +231,7 @@ Hook 模板见 [`connectors/templates/`](../../connectors/templates/)。
 
 ```bash
 lifeos login --server http://127.0.0.1:8000 --api-key ...
-lifeos world-create --pack alice --name "我的 Alice"
+lifeos world-create --pack chenyuan --name "我的陈远"
 lifeos context "你好" --connector pi
 lifeos connector install pi
 lifeos session-start --connector pi --session-id abc

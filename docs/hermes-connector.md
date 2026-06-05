@@ -1,6 +1,6 @@
 # Hermes Agent × LifeOS 安装与卸载
 
-本文说明如何在 [Hermes Agent](https://hermes-agent.nousresearch.com/) 中接入 LifeOS（Alice 世界状态、人设、情绪、记忆），以及如何验证、停用与卸载。
+本文说明如何在 [Hermes Agent](https://hermes-agent.nousresearch.com/) 中接入 LifeOS（陈远世界状态、人设、情绪、记忆），以及如何验证、停用与卸载。
 
 ## 前置条件
 
@@ -47,7 +47,7 @@ Hermes 用户消息
 ```bash
 cd lifeostomanyagent
 uv run lifeos login --server http://127.0.0.1:8000 --api-key <你的 API Key>
-uv run lifeos world-create --pack alice --name "我的 Alice"
+uv run lifeos world-create --pack chenyuan --name "我的陈远"
 ```
 
 确认 `~/.lifeos/config.json` 含 `server_url`、`api_key`、`default_world_id`。
@@ -140,7 +140,7 @@ curl -s http://127.0.0.1:8000/health
 uv run lifeos context "你好，测试一下" --connector hermes
 ```
 
-输出应含 Alice 人设相关片段（如「白艾莉」「横琴」等）。
+输出应含陈远人设相关片段（如「陈远」「UBI」等）。
 
 ### 层 2：插件 client（不启动 Hermes UI）
 
@@ -164,7 +164,7 @@ EOF
 
 1. 确认 `hermes plugins list` 中 `lifeos` 为 **enabled**
 2. 运行 `hermes`，发送例如：「你是谁？你现在在哪里？」
-3. 若回答体现 Alice 人设（非通用助手口吻），则注入成功
+3. 若回答体现 陈远人设（非通用助手口吻），则注入成功
 
 ### 常见问题
 

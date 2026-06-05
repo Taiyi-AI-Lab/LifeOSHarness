@@ -13,7 +13,7 @@ def _world(world_id: str, pack_id: str, display_name: str) -> WorldResponse:
 
 def test_select_world_by_id():
     worlds = [
-        _world("alice-world", "alice", "我的 Alice"),
+        _world("chenyuan-world", "chenyuan", "我的陈远"),
         _world("musheng-world", "musheng", "木生"),
     ]
 
@@ -24,7 +24,7 @@ def test_select_world_by_id():
 
 def test_select_world_by_unique_pack():
     worlds = [
-        _world("alice-world", "alice", "我的 Alice"),
+        _world("chenyuan-world", "chenyuan", "我的陈远"),
         _world("musheng-world", "musheng", "木生"),
     ]
 
@@ -35,23 +35,23 @@ def test_select_world_by_unique_pack():
 
 def test_select_world_by_pack_and_name():
     worlds = [
-        _world("alice-1", "alice", "我的 Alice"),
-        _world("alice-2", "alice", "测试 Alice"),
+        _world("chenyuan-1", "chenyuan", "我的陈远"),
+        _world("chenyuan-2", "chenyuan", "测试陈远"),
     ]
 
-    selected = _select_world(worlds, world_id=None, pack_id="alice", display_name="测试 Alice")
+    selected = _select_world(worlds, world_id=None, pack_id="chenyuan", display_name="测试陈远")
 
-    assert selected.world_id == "alice-2"
+    assert selected.world_id == "chenyuan-2"
 
 
 def test_select_world_rejects_ambiguous_pack():
     worlds = [
-        _world("alice-1", "alice", "我的 Alice"),
-        _world("alice-2", "alice", "测试 Alice"),
+        _world("chenyuan-1", "chenyuan", "我的陈远"),
+        _world("chenyuan-2", "chenyuan", "测试陈远"),
     ]
 
     with pytest.raises(typer.BadParameter, match="matched 2 worlds"):
-        _select_world(worlds, world_id=None, pack_id="alice", display_name=None)
+        _select_world(worlds, world_id=None, pack_id="chenyuan", display_name=None)
 
 
 def test_select_world_requires_filter():
@@ -61,7 +61,7 @@ def test_select_world_requires_filter():
 
 def test_select_world_for_dream_commands_by_pack():
     worlds = [
-        _world("alice-world", "alice", "我的 Alice"),
+        _world("chenyuan-world", "chenyuan", "我的陈远"),
         _world("musheng-world", "musheng", "木生"),
     ]
 
@@ -72,10 +72,10 @@ def test_select_world_for_dream_commands_by_pack():
 
 def test_select_world_for_dream_commands_by_world_id():
     worlds = [
-        _world("alice-world", "alice", "我的 Alice"),
+        _world("chenyuan-world", "chenyuan", "我的陈远"),
         _world("musheng-world", "musheng", "木生"),
     ]
 
-    selected = _select_world(worlds, world_id="alice-world", pack_id=None, display_name=None)
+    selected = _select_world(worlds, world_id="chenyuan-world", pack_id=None, display_name=None)
 
-    assert selected.pack_id == "alice"
+    assert selected.pack_id == "chenyuan"

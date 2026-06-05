@@ -55,12 +55,12 @@ agent_packs (pack_id)
 
 ## `agent_packs`
 
-Agent 世界「模板」。Alice 示例预设 `pack_id = 'alice'`，`is_preset = true`。
+Agent 世界「模板」。陈远示例预设 `pack_id = 'chenyuan'`，`is_preset = true`。
 
 | 列名 | 类型 | 约束 | 说明 |
 |------|------|------|------|
 | `id` | `VARCHAR(36)` | PK | 内部 UUID |
-| `pack_id` | `VARCHAR(128)` | UNIQUE, INDEX | 业务 ID，如 `alice`、`nova` |
+| `pack_id` | `VARCHAR(128)` | UNIQUE, INDEX | 业务 ID，如 `chenyuan`、`nova` |
 | `display_name` | `VARCHAR(256)` | NOT NULL | 展示名 |
 | `config_json` | `JSON` | NOT NULL | 完整 Pack 配置，结构见下 |
 | `is_preset` | `BOOLEAN` | DEFAULT false | 是否为内置示例预设 |
@@ -72,12 +72,12 @@ Agent 世界「模板」。Alice 示例预设 `pack_id = 'alice'`，`is_preset =
 
 ```json
 {
-  "pack_id": "alice",
-  "display_name": "Alice",
+  "pack_id": "chenyuan",
+  "display_name": "陈远",
   "identity": {
-    "agent_name": "Alice",
-    "codename": "白艾莉",
-    "identity_code": "#76ACAD",
+    "agent_name": "陈远",
+    "codename": "UBI-公民",
+    "identity_code": "#CHENYUAN-2035",
     "backstory": "……",
     "relationship_stance": "……",
     "core_values": ["……"]
@@ -96,8 +96,8 @@ Agent 世界「模板」。Alice 示例预设 `pack_id = 'alice'`，`is_preset =
   },
   "world_rules": {
     "timezone": "Asia/Shanghai",
-    "work_hours": "08:00-24:00",
-    "locations": ["珠海横琴"],
+    "work_hours": "10:00-23:30",
+    "locations": ["2035 年中国一座二三线城市", "陈远的出租屋", "虚拟世界"],
     "custom_facts": ["……"]
   },
   "runtime_modules": {
@@ -207,7 +207,7 @@ SELECT pack_id, display_name, is_preset, created_at FROM agent_packs;
 -- 某 Pack 下的世界
 SELECT world_id, display_name, runtime_dir, created_at
 FROM world_instances
-WHERE pack_id = 'alice';
+WHERE pack_id = 'chenyuan';
 
 -- 某世界最近会话
 SELECT connector_id, session_id, started_at, ended_at
@@ -223,7 +223,7 @@ LIMIT 10;
 
 | 操作 | 接口 |
 |------|------|
-| 安装/刷新 Alice 示例预设 | `POST /packs/presets/alice` |
+| 安装/刷新 陈远示例预设 | `POST /packs/presets/chenyuan` |
 | 创建 Pack | `POST /packs` |
 | 列出 Pack | `GET /packs` |
 | 创建 World | `POST /worlds` |

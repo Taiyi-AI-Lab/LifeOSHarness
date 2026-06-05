@@ -11,9 +11,9 @@ from lifeostomanyagent.domain.models import AgentPackConfig, WorldOverrides
 from lifeostomanyagent.server.engine.dream_llm import DeepSeekDreamLLM
 from lifeostomanyagent.server.engine.dreams import DreamEngine
 from lifeostomanyagent.server.engine.prompt_composer import PromptComposer
-from lifeostomanyagent.server.runtime_state.emotion_system.system import AliceEmotionSystem
+from lifeostomanyagent.server.runtime_state.emotion_system.system import EmotionSystem
 from lifeostomanyagent.server.runtime_state.memory_system.system import UserMemorySystem
-from lifeostomanyagent.server.runtime_state.persona_system.system import AlicePersonaSystem
+from lifeostomanyagent.server.runtime_state.persona_system.system import PersonaSystem
 from lifeostomanyagent.server.runtime_state.sql_store import SQLRuntimeStore
 from lifeostomanyagent.server.runtime_state.world_engine.engine import WorldEngine
 
@@ -55,7 +55,7 @@ class WorldRuntimeEngine:
             else None
         )
         self.persona = (
-            AlicePersonaSystem(
+            PersonaSystem(
                 str(world_root / "persona.json") if world_root else None,
                 store=self.sql_store,
             )
@@ -63,7 +63,7 @@ class WorldRuntimeEngine:
             else None
         )
         self.emotion = (
-            AliceEmotionSystem(
+            EmotionSystem(
                 str(world_root / "emotion.json") if world_root else None,
                 store=self.sql_store,
             )

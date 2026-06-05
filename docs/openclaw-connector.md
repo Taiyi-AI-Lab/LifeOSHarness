@@ -1,6 +1,6 @@
 # OpenClaw × LifeOS 安装与卸载
 
-本文说明如何在 [OpenClaw](https://docs.openclaw.ai/) 中接入 LifeOS（Alice 世界状态、人设、情绪、记忆），以及如何验证、停用与卸载。
+本文说明如何在 [OpenClaw](https://docs.openclaw.ai/) 中接入 LifeOS（陈远世界状态、人设、情绪、记忆），以及如何验证、停用与卸载。
 
 ## 前置条件
 
@@ -59,7 +59,7 @@ OpenClaw agent 轮次
 ```bash
 cd lifeostomanyagent
 uv run lifeos login --server http://127.0.0.1:8000 --api-key <你的 API Key>
-uv run lifeos world-create --pack alice --name "我的 Alice"
+uv run lifeos world-create --pack chenyuan --name "我的陈远"
 ```
 
 确认 `~/.lifeos/config.json` 含 `server_url`、`api_key`、`default_world_id`。
@@ -178,7 +178,7 @@ cat ~/.openclaw/extensions/lifeos/openclaw.plugin.json
 
 1. `openclaw plugins inspect lifeos --runtime --json` 确认 hook 已注册
 2. 通过 Gateway / CLI 发起对话，问「你是谁？你现在在哪里？」
-3. 回答应体现 Alice 人设
+3. 回答应体现 陈远人设
 
 拉取失败时插件**静默降级**（不修改 system prompt），检查 LifeOS 服务与 `config.json`。
 

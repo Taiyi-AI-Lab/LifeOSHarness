@@ -115,11 +115,11 @@ def test_api_runtime_state_is_persisted_in_sql_tables(client):
 def test_world_facts_use_the_same_sql_database(client):
     import lifeostomanyagent.server.db.models as db_models
 
-    client.post("/packs/presets/alice", headers=API_HEADERS)
+    client.post("/packs/presets/chenyuan", headers=API_HEADERS)
     world_id = client.post(
         "/worlds",
         headers=API_HEADERS,
-        json={"pack_id": "alice", "display_name": "facts sql"},
+        json={"pack_id": "chenyuan", "display_name": "facts sql"},
     ).json()["world_id"]
 
     client.post(
@@ -151,11 +151,11 @@ def test_world_facts_use_the_same_sql_database(client):
 def test_legacy_runtime_files_are_imported_once(client, tmp_path: Path):
     import lifeostomanyagent.server.db.models as db_models
 
-    client.post("/packs/presets/alice", headers=API_HEADERS)
+    client.post("/packs/presets/chenyuan", headers=API_HEADERS)
     world_id = client.post(
         "/worlds",
         headers=API_HEADERS,
-        json={"pack_id": "alice", "display_name": "legacy import"},
+        json={"pack_id": "chenyuan", "display_name": "legacy import"},
     ).json()["world_id"]
 
     legacy_dir = tmp_path / "legacy-world"

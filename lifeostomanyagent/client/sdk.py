@@ -71,8 +71,8 @@ class LifeOSClient:
         response.raise_for_status()
         return response.json()
 
-    def install_alice_preset(self) -> dict:
-        response = self._client.post("/packs/presets/alice")
+    def install_chenyuan_preset(self) -> dict:
+        response = self._client.post("/packs/presets/chenyuan")
         response.raise_for_status()
         return response.json()
 

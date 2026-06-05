@@ -5,13 +5,13 @@ from .engine import (
     get_world_debug_action_specs,
 )
 from .enrich import FactEnricher
-from .fact_extractor import AliceFactExtractor
+from .fact_extractor import AgentFactExtractor
 from .price import PriceOracle, PriceResult
 from .prompts_world import WorldPrompts
 from .rules import ValidationResult, ValidationViolation, validate_action
 
 __all__ = [
-    "AliceFactExtractor",
+    "AgentFactExtractor",
     "PriceOracle",
     "PriceResult",
     "FactEnricher",

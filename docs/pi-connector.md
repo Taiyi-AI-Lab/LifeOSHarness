@@ -1,8 +1,8 @@
 # pi agent × LifeOS 安装与卸载
 
-本文说明如何在 [pi coding agent](https://github.com/badlogic/pi-mono)（`pi` CLI）中接入 LifeOS（Alice 世界状态、人设、情绪、记忆），以及如何验证、停用与卸载。
+本文说明如何在 [pi coding agent](https://github.com/badlogic/pi-mono)（`pi` CLI）中接入 LifeOS（陈远世界状态、人设、情绪、记忆），以及如何验证、停用与卸载。
 
-> **说明**：本文档针对 **pi CLI + Extension** 联动。Alice Electron 桌面端通过子进程接入 pi 的方案见 [`docs/api/pi-agent-adapter.md`](api/pi-agent-adapter.md)，与 LifeOS Extension 可并存，但集成路径不同。
+> **说明**：本文档针对 **pi CLI + Extension** 联动。陈远 Electron 桌面端通过子进程接入 pi 的方案见 [`docs/api/pi-agent-adapter.md`](api/pi-agent-adapter.md)，与 LifeOS Extension 可并存，但集成路径不同。
 
 ## 前置条件
 
@@ -62,7 +62,7 @@ pi 用户发送消息
 ```bash
 cd lifeostomanyagent
 uv run lifeos login --server http://127.0.0.1:8000 --api-key <你的 API Key>
-uv run lifeos world-create --pack alice --name "我的 Alice"
+uv run lifeos world-create --pack chenyuan --name "我的陈远"
 ```
 
 确认 `~/.lifeos/config.json` 含 `server_url`、`api_key`、`default_world_id`。
@@ -78,7 +78,7 @@ uv run lifeos world-create --pack alice --name "我的 Alice"
 }
 ```
 
-- `prepend`：LifeOS 块在前，pi 原 system 在后（默认，Alice 人设优先）
+- `prepend`：LifeOS 块在前，pi 原 system 在后（默认，陈远人设优先）
 - `append`：pi 原 system 在前，LifeOS 块在后
 
 ### 2. 安装 pi Extension
@@ -158,7 +158,7 @@ curl -s http://127.0.0.1:8000/health
 uv run lifeos context "你好，测试一下" --connector pi
 ```
 
-输出应含 Alice 人设相关片段。
+输出应含 陈远人设相关片段。
 
 ### 层 2：确认 Extension 文件
 
@@ -174,7 +174,7 @@ head -20 ~/.pi/agent/extensions/lifeos.ts
 1. 确认 LifeOS API 在跑、`config.json` 正确
 2. 运行 `pi`，执行 `/lifeos` 确认已连接
 3. 发送例如：「你是谁？你现在在哪里？」
-4. 若回答体现 Alice 人设，则注入成功
+4. 若回答体现 陈远人设，则注入成功
 
 若拉取失败，pi 会通知「LifeOS context 拉取失败，使用 pi 默认 system prompt」，此时检查服务与 `default_world_id`。
 
@@ -272,4 +272,4 @@ uv run lifeos connector install pi
 - 平台 API 总览：[`docs/api/lifeos-platform.md`](api/lifeos-platform.md)
 - Claude Code：[`docs/claude-code-connector.md`](claude-code-connector.md)
 - Hermes：[`docs/hermes-connector.md`](hermes-connector.md)
-- Alice × pi 子进程协议（Electron）：[`docs/api/pi-agent-adapter.md`](api/pi-agent-adapter.md)
+- 陈远 × pi 子进程协议（Electron）：[`docs/api/pi-agent-adapter.md`](api/pi-agent-adapter.md)

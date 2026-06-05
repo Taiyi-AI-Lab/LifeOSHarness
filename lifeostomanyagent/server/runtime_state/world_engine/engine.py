@@ -8,7 +8,7 @@ from sqlalchemy.orm import Session
 
 from .clock import SQLWorldClock, WorldClock
 from .enrich import FactEnricher
-from .fact_extractor import AliceFactExtractor
+from .fact_extractor import AgentFactExtractor
 from .models import DAY_MS, current_millis
 from .price import PriceOracle
 from .rules import days_to_millis, validate_action
@@ -61,7 +61,7 @@ WORLD_DEBUG_ACTION_SPECS = (
     },
     {
         "action": "queryPrice",
-        "paramsExample": {"item": "咖啡", "category": "food", "location": "横琴"},
+        "paramsExample": {"item": "咖啡", "category": "food", "location": "中国二三线城市"},
         "result": "estimated price range",
     },
     {
@@ -227,14 +227,14 @@ class WorldEngine:
                     },
                 }
             if action == "extractFacts":
-                extractor = AliceFactExtractor(self.store)
+                extractor = AgentFactExtractor(self.store)
                 llm = params.get("llm")
                 if not callable(llm):
                     return {
                         "ok": False,
                         "error": "extractFacts requires params.llm callable in the Python replica",
                     }
-                extracted = extractor.extract_alice_facts(params.get("messages", []), llm)
+                extracted = extractor.extract_agent_facts(params.get("messages", []), llm)
                 committed = extractor.commit_extracted_facts(extracted) if extracted else 0
                 return {"ok": True, "data": {"extracted": extracted, "committed": committed}}
             if action == "retireFact":
