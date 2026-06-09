@@ -7,3 +7,4 @@ __pycache__/
 *.sqlite3
 .agents/*
 skills-lock.json
+web/ref_web/*

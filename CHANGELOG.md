@@ -10,6 +10,7 @@ The format is based on Keep a Changelog, and this project follows Semantic Versi
 
 - Added SQLite-first unified SQL storage for core runtime state, with optional PostgreSQL via `DATABASE_URL` and automatic import of legacy runtime files.
 - Added an intent gate for `/runtime/context`: LifeOS context is injected only for clear chitchat / companionship turns by default.
+- Added `LIFEOS_INTENT_CLASSIFIER=off` to disable the intent gate and restore always-inject context behavior.
 - Added optional DeepSeek-based intent classification via `LIFEOS_INTENT_CLASSIFIER=llm`, with deterministic rule fallback.
 - Added community and contribution files: `AGENTS.md`, `CONTRIBUTING.md`, and `CODE_OF_CONDUCT.md`.
 - Added backend-only repository scope notes and a security deployment checklist.

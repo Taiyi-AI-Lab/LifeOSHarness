@@ -89,6 +89,7 @@ Protected runtime blocks are preserved during trimming where possible, while low
 
 - `interaction_intent=auto` uses the configured classifier.
 - `interaction_intent=chitchat` or `task` explicitly overrides classification.
+- `LIFEOS_INTENT_CLASSIFIER=off` disables the gate and treats every auto request as `chitchat`, restoring always-inject behavior.
 - `LIFEOS_INTENT_CLASSIFIER=rules` is the default and prefers `task` for any task signal or unknown message.
 - `LIFEOS_INTENT_CLASSIFIER=llm` uses DeepSeek for classification, then falls back to rules if the model is unavailable, low-confidence, or returns invalid JSON.
 - Task turns return `system=""`, `injected=false`, and no context blocks.

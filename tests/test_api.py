@@ -214,6 +214,34 @@ def test_context_injects_for_explicit_chitchat_override(client):
     assert body["intent_classifier"] == "explicit"
 
 
+def test_context_injects_when_intent_classifier_is_off(client, monkeypatch):
+    monkeypatch.setattr(settings, "lifeos_intent_classifier", "off")
+
+    client.post("/packs/presets/chenyuan", headers=API_HEADERS)
+    world_id = client.post(
+        "/worlds",
+        headers=API_HEADERS,
+        json={"pack_id": "chenyuan", "display_name": "intent off"},
+    ).json()["world_id"]
+
+    context = client.post(
+        "/runtime/context",
+        headers=API_HEADERS,
+        json={
+            "world_id": world_id,
+            "user_message": "帮我修一下 pytest 报错",
+            "connector_id": "claude-code",
+        },
+    )
+
+    assert context.status_code == 200
+    body = context.json()
+    assert "陈远" in body["system"]
+    assert body["resolved_intent"] == "chitchat"
+    assert body["injected"] is True
+    assert body["intent_classifier"] == "off"
+
+
 def test_context_uses_llm_classifier_when_configured(client, monkeypatch):
     calls: list[dict] = []
 

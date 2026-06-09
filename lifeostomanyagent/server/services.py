@@ -725,10 +725,19 @@ class LifeOSService:
         )
 
     def _classify_context_intent(self, payload: ContextRequest) -> IntentClassification:
+        classifier_mode = settings.lifeos_intent_classifier.strip().lower()
+        if payload.interaction_intent == "auto" and classifier_mode in {"off", "disabled", "none"}:
+            return IntentClassification(
+                "chitchat",
+                "off",
+                1.0,
+                "LIFEOS_INTENT_CLASSIFIER=off，已关闭意图门控。",
+            )
+
         llm_classifier = None
         if (
             payload.interaction_intent == "auto"
-            and settings.lifeos_intent_classifier.strip().lower() == "llm"
+            and classifier_mode == "llm"
         ):
             api_key = (settings.deepseek_api_key or "").strip()
             if api_key:

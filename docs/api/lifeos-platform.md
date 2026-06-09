@@ -132,6 +132,8 @@ Extension 安装到 `~/.pi/agent/extensions/lifeos.ts`，通过 `before_agent_st
 
 当 `resolved_intent=task` 时，`system=""`、`order=[]`、`blocks=[]`、`injected=false`。默认规则分类优先识别代码、测试、文件、搜索、总结、翻译、生成产物、工具操作等任务信号；未知消息也按 task 处理，避免误注入。
 
+配置 `LIFEOS_INTENT_CLASSIFIER=off` 后，服务端关闭意图门控，所有 `interaction_intent=auto` 的 context 请求都按 `chitchat` 处理并注入 LifeOS context。
+
 配置 `LIFEOS_INTENT_CLASSIFIER=llm` 后，服务端使用 DeepSeek 意图分类，模型由 `DEEPSEEK_INTENT_MODEL` 指定；无 API key、超时、低置信度或非法 JSON 时自动回退规则分类。
 
 响应 `system` 字段由 [`PromptComposer`](../../lifeostomanyagent/server/engine/prompt_composer.py) 按 `connector_id` 组装，块顺序如下：
